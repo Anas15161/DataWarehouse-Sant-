@@ -1,0 +1,71 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+% Définition des couleurs pour correspondre au document original
+\definecolor{myblue}{RGB}{43, 106, 171}
+\definecolor{myteal}{RGB}{0, 128, 128}
+
+\begin{document}
+
+% En-tête
+\begin{center}
+    \textcolor{myteal}{\textbf{Thème : Pilotage Stratégique de l'Activité Médicale}} \\
+    \textcolor{myteal}{\textbf{Durée : 02H00 | Séance de Modélisation Conceptuelle}}
+\end{center}
+
+\vspace{0.5cm}
+
+% Titre principal
+\noindent\textcolor{myblue}{\large\textbf{Étude de Cas : Modernisation du Système Hospitalier}}
+\vspace{0.3cm}
+\hrule height 1pt \textcolor{myblue}{}
+\vspace{0.3cm}
+
+% Corps du texte
+\noindent La direction d'un centre hospitalier de Rabat souhaite migrer vers un système de pilotage décisionnel pour optimiser sa gestion. Actuellement, le système transactionnel se contente d'enregistrer chaque interaction entre le corps médical et les usagers.
+
+\vspace{0.2cm}
+\noindent Lorsqu'une visite est effectuée, le praticien renseigne une fiche comportant l'instant précis de l'acte, la durée effective de l'intervention ainsi que les frais de consultation facturés. Pour enrichir l'analyse, la direction souhaite croiser ces données avec le profil des patients (notamment leur âge au moment du soin, leur genre et leur provenance géographique) et l'expertise des intervenants (spécialité médicale et ancienneté dans la fonction). L'enjeu est de transformer cette masse d'informations brutes en leviers d'optimisation pour les ressources humaines et la prise en charge médicale.
+
+\vspace{0.5cm}
+\hrule height 1pt \textcolor{myblue}{}
+\vspace{0.3cm}
+
+% Section Travail à Faire
+\noindent\textcolor{myblue}{\large\textbf{Travail à Faire}}
+\vspace{0.3cm}
+
+\noindent\textbf{Exercice 1 : Analyse des Besoins et Extraction}
+
+\vspace{0.2cm}
+\noindent \textit{En vous basant sur le récit de l'étude de cas :}
+\begin{enumerate}[label=\arabic*., leftmargin=*]
+    \item Identifier le \textbf{Processus Métier} fondamental à modéliser.
+    \item Extraire du texte les \textbf{Indicateurs de Performance} (Mesures) nécessaires.
+    \item Identifier les \textbf{Axes d'Analyse} (Dimensions) permettant de contextualiser ces mesures.
+    \item Formuler quatre \textbf{questions d'analyse} critiques auxquelles le modèle devra répondre pour satisfaire les attentes de la direction.
+\end{enumerate}
+
+\vspace{1cm}
+
+% --- AJOUT BASÉ SUR L'INFOGRAPHIE ---
+\noindent\textcolor{myteal}{\large\textbf{Rappel Méthodologique : Conception Dimensionnelle}}
+\vspace{0.2cm}
+\hrule height 0.5pt \textcolor{myteal}{}
+\vspace{0.3cm}
+
+\noindent \textit{Pour structurer votre réponse à l'Exercice 1, appuyez-vous sur la méthodologie de conception en 4 étapes de Ralph Kimball :}
+\begin{itemize}[label=\textbullet, leftmargin=*]
+    \item \textbf{Étape 1 : Sélectionner le Processus Métier.} Identifier l'événement opérationnel spécifique à analyser (ex: la visite médicale / l'acte médical).
+    \item \textbf{Étape 2 : Déclarer le Grain.} Déterminer le niveau de détail le plus fin. Ici, il s'agit d'une ligne par acte médical lors d'une visite.
+    \item \textbf{Étape 3 : Choisir les Dimensions.} Identifier le contexte (qui, quand, où). Dans ce cas : le Temps (instant), le Patient (profil), et le Praticien (expertise).
+    \item \textbf{Étape 4 : Identifier les Faits.} Définir les indicateurs numériques mesurables (durée de l'intervention, frais de consultation).
+\end{itemize}
+
+\end{document}
