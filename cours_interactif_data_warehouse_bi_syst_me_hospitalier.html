@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masterclass Data Warehouse & BI — Système Hospitalier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        bgDark: '#070b14',
+                        cardDark: '#101726',
+                        cardBorder: '#1e293b',
+                        accentCyan: '#38bdf8',
+                        accentIndigo: '#818cf8',
+                        accentAmber: '#fbbf24',
+                        accentEmerald: '#34d399',
+                        accentRose: '#f43f5e'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #070b14;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.07) 0%, transparent 35%),
+                radial-gradient(circle at 85% 80%, rgba(129, 140, 248, 0.07) 0%, transparent 40%);
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #070b14; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+
+        /* Animations */
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
+            50% { box-shadow: 0 0 28px rgba(56, 189, 248, 0.45); }
+        }
+        .glow-cyan { animation: pulseGlow 3s infinite; }
+
+        @keyframes floatPacket {
+            0% { transform: translateX(0); opacity: 0; }
+            15% { opacity: 1; }
+            85% { opacity: 1; }
+            100% { transform: translateX(220px); opacity: 0; }
+        }
+        .packet-anim { animation: floatPacket 1.6s infinite linear; }
+
+        @keyframes scanBeam {
+            0% { top: 0%; opacity: 0.8; }
+            50% { top: 90%; opacity: 1; }
+            100% { top: 0%; opacity: 0.8; }
+        }
+        .scan-beam { animation: scanBeam 2.4s infinite ease-in-out; }
+
+        @keyframes dashFlow {
+            to { stroke-dashoffset: -24; }
+        }
+        .svg-flow-line {
+            stroke-dasharray: 6, 6;
+            animation: dashFlow 1s linear infinite;
+        }
+
+        .glass-card {
+            background: rgba(16, 23, 38, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.6);
+        }
+
+        .badge-pill {
+            background: rgba(14, 116, 144, 0.2);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: #38bdf8;
+        }
+
+        .slide-enter {
+            animation: fadeInSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeInSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-white">
+
+    <!-- TOP NAVIGATION BAR (PRESENTATION CONTROLS) -->
+    <header class="sticky top-0 z-50 glass-card border-b border-slate-800/80 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <!-- Brand & Course Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20 font-bold text-lg">
+                    🏥
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono uppercase tracking-wider text-sky-400 font-semibold">Architecture Décisionnelle & BI</span>
+                        <span class="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-medium">Support de Cours Interactif</span>
+                    </div>
+                    <h1 class="text-sm sm:text-base font-bold text-white tracking-tight">Cas d'Étude : Entrepôt de Données Hospitalier (CHU)</h1>
+                </div>
+            </div>
+
+            <!-- Module Quick Selector Pills -->
+            <nav class="hidden xl:flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800" id="nav-pills-container">
+                <!-- Dynamically populated by JS -->
+            </nav>
+
+            <!-- Action Controls -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="toggleProfNotes()" id="prof-notes-btn" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 transition-all shadow-sm">
+                    <span>🎓</span>
+                    <span id="prof-notes-label">Explications Étudiants (ON)</span>
+                </button>
+
+                <div class="flex items-center bg-slate-900 rounded-xl border border-slate-800 p-1">
+                    <button onclick="prevSlide()" id="btn-prev" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition disabled:opacity-30">
+                        ◀ Préc.
+                    </button>
+                    <span id="slide-counter" class="px-3 text-xs font-mono font-bold text-sky-400">1 / 9</span>
+                    <button onclick="nextSlide()" id="btn-next" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-slate-950 transition disabled:opacity-30">
+                        Suiv. ▶
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-900 h-1 mt-3 rounded-full overflow-hidden">
+            <div id="progress-bar" class="bg-gradient-to-r from-sky-400 via-indigo-400 to-emerald-400 h-full transition-all duration-300" style="width: 11.11%"></div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- =====================================================================
+             PAGE 1 : 01 • DICHOTOMIE FONDAMENTALE (OLTP vs OLAP)
+             ===================================================================== -->
+        <section id="slide-0" class="slide-page slide-enter space-y-8">
+            <!-- Header matching screenshot 1 -->
+            <div>
+                <span class="inline-block badge-pill text-xs font-mono uppercase tracking-widest px-3.5 py-1 rounded-full mb-3">
+                    01 • DICHOTOMIE FONDAMENTALE
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+                    OLTP vs OLAP & <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">La Raison d'Être du Data Warehouse</span>
+                </h2>
+                <p class="mt-3 text-slate-400 max-w-3xl text-base sm:text-lg leading-relaxed">
+                    Pourquoi une entreprise ou un hôpital ne peut <strong class="text-slate-200">jamais</strong> exécuter ses analyses de gestion directement sur sa base de données de production.
+                </p>
+            </div>
+
+            <!-- Interactive Live Packet Visualizer Banner -->
+            <div class="glass-card rounded-2xl p-5 border border-slate-800/90">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        <h3 class="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold">Animation Interactive : Comparaison Physique des Flux I/O Disque</h3>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="setOltpAnimMode('both')" id="anim-btn-both" class="px-3 py-1 rounded-lg text-xs font-medium bg-sky-500/20 text-sky-300 border border-sky-500/40">Comparer les 2 Flux</button>
+                        <button onclick="setOltpAnimMode('conflict')" id="anim-btn-conflict" class="px-3 py-1 rounded-lg text-xs font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25">⚠️ Simuler Collision sur même Base</button>
+                    </div>
+                </div>
+
+                <div id="io-animation-stage" class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+                    <!-- Left: OLTP Micro-Transactions -->
+                    <div class="bg-slate-950/80 rounded-xl p-4 border border-amber-500/30 relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">⚡ Flux Transactionnel OLTP (Écritures Ciblées)</span>
+                            <span class="text-[11px] font-mono bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded">Index Seek • 2 ms</span>
+                        </div>
+                        <div class="h-20 flex items-center justify-between px-3 bg-slate-900/90 rounded-lg border border-slate-800 relative overflow-hidden">
+                            <div class="z-10 text-center">
+                                <div class="text-xl">🚑</div>
+                                <div class="text-[10px] text-slate-400 font-mono">Urgences</div>
+                            </div>
+                            <!-- Animated micro packets -->
+                            <div class="flex-1 relative h-8 mx-4">
+                                <div class="packet-anim absolute top-1 left-0 px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-mono text-[10px] font-bold shadow-lg shadow-amber-400/50" style="animation-delay: 0s;">INSERT #901</div>
+                                <div class="packet-anim absolute top-1 left-0 px-2 py-0.5 rounded bg-amber-300 text-slate-950 font-mono text-[10px] font-bold shadow-lg shadow-amber-300/50" style="animation-delay: 0.55s;">UPDATE Lit_4</div>
+                                <div class="packet-anim absolute top-1 left-0 px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-mono text-[10px] font-bold shadow-lg shadow-amber-500/50" style="animation-delay: 1.1s;">INSERT #902</div>
+                            </div>
+                            <div class="z-10 text-center">
+                                <div class="text-xl">🗄️</div>
+                                <div class="text-[10px] text-amber-400 font-mono">1 Ligne (X-Lock)</div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2.5">
+                            Touche <strong class="text-amber-300">1 seule ligne à la fois</strong> via l'index B-Tree. Très rapide, mais verrouille la ligne modifiée.
+                        </p>
+                    </div>
+
+                    <!-- Right: OLAP Massive Scan -->
+                    <div class="bg-slate-950/80 rounded-xl p-4 border border-sky-500/30 relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-bold text-sky-400 flex items-center gap-1.5">📊 Flux Décisionnel OLAP (Balayage Massif)</span>
+                            <span class="text-[11px] font-mono bg-sky-500/10 text-sky-300 px-2 py-0.5 rounded">Full Column Scan • 15M lignes</span>
+                        </div>
+                        <div class="h-20 flex items-center justify-between px-3 bg-slate-900/90 rounded-lg border border-slate-800 relative overflow-hidden">
+                            <div class="z-10 text-center">
+                                <div class="text-xl">📈</div>
+                                <div class="text-[10px] text-slate-400 font-mono">Direction</div>
+                            </div>
+                            <div class="flex-1 mx-4 bg-sky-950/40 border border-sky-500/30 rounded h-12 relative overflow-hidden flex items-center justify-center">
+                                <div class="scan-beam absolute left-0 right-0 h-1.5 bg-sky-400 shadow-[0_0_12px_#38bdf8]"></div>
+                                <span class="text-[11px] font-mono text-sky-200">SELECT SUM(frais) GROUP BY annee, service</span>
+                            </div>
+                            <div class="z-10 text-center">
+                                <div class="text-xl">🏛️</div>
+                                <div class="text-[10px] text-sky-400 font-mono">100% Table Lue</div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2.5">
+                            Lit <strong class="text-sky-300">des millions de lignes historiques</strong> d'un coup pour calculer des moyennes et tendances.
+                        </p>
+                    </div>
+                </div>
+                <div id="conflict-warning-box" class="hidden mt-4 p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/50 text-rose-200 text-xs flex items-center justify-between">
+                    <span>🔥 <strong>COLLISION CRITIQUE :</strong> Si le Scan OLAP tourne sur la base OLTP, il pose des verrous de lecture (S-Locks) sur toute la table. Les ambulances aux urgences ne peuvent plus faire d'INSERT !</span>
+                    <button onclick="goToSlide(1)" class="px-3 py-1 bg-rose-500 text-white font-bold rounded-lg shrink-0 ml-4 hover:bg-rose-400">Tester au Simulateur ▶</button>
+                </div>
+            </div>
+
+            <!-- Two Main Cards Matching Slide 01 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- OLTP CARD -->
+                <div class="glass-card rounded-2xl p-6 sm:p-8 border-2 border-amber-500/30 hover:border-amber-500/60 transition-all shadow-xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">⚡</span>
+                            <h3 class="text-xl sm:text-2xl font-bold text-amber-400">OLTP (Run the Business)</h3>
+                        </div>
+                        <span class="text-xs font-mono px-2.5 py-1 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Opérationnel</span>
+                    </div>
+
+                    <div class="space-y-4 divide-y divide-slate-800/80">
+                        <div class="pt-2">
+                            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">MISSION</div>
+                            <p class="text-sm sm:text-base text-slate-100 font-medium">Gérer les opérations au fil de l'eau (enregistrer une visite, admettre un patient)</p>
+                        </div>
+                        <div class="pt-4">
+                            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">MODÈLE</div>
+                            <p class="text-sm sm:text-base text-slate-100 font-medium">Normalisé (<span class="text-amber-300 font-mono">3NF</span>) — zéro redondance pour des écritures ultra-rapides et sans anomalie</p>
+                        </div>
+                        <div class="pt-4">
+                            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">REQUÊTES</div>
+                            <p class="text-sm sm:text-base text-slate-100 font-medium"><code class="text-amber-300 bg-slate-900 px-1.5 py-0.5 rounded">INSERT</code>, <code class="text-amber-300 bg-slate-900 px-1.5 py-0.5 rounded">UPDATE</code>, transactions unitaires très brèves (<span class="text-emerald-400 font-mono">&lt; 5ms</span>)</p>
+                        </div>
+                        <div class="pt-4">
+                            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">DONNÉES</div>
+                            <p class="text-sm sm:text-base text-slate-100 font-medium">État courant instantané — les modifications écrasent l'ancien état (<span class="italic text-slate-400">amnésie historique</span>)</p>
+                        </div>
+                        <div class="pt-4">
+                            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">CONTRAINTE ACID</div>
+                            <p class="text-sm sm:text-base text-slate-100 font-medium">Verrous exclusifs (<span class="text-rose-400 font-mono">X-Locks</span>) garantissant la cohérence immédiate</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OLAP CARD -->
+                <div class="glass-card rounded-2xl p-6 sm:p-8 border-2 border-sky-500/30 hover:border-sky-500/60 transition-all shadow-xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">📊</span>
+                            <h3 class="text-xl sm:text-2xl font-bold text-sky-400">OLAP (Steer the Business)</h3>
+                        </div>
+                        <span class="text-xs font-mono px-2.5 py-1 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20">Décisionnel</span>
+                    </div>
+
+                    <div class="space-y-4 divide-y divide-slate-800/80">
+                        <div class="pt-2">
+                            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">MISSION</div>
+                            <p class="text-sm sm:text-base text-slate-100 font-medium">Piloter la stratégie & mesurer la rentabilité (analyser 3 ans de soins hospitaliers)</p>
+                        </div>
+                        <div class="pt-4">
+                            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">MODÈLE</div>
+                            <p class="text-sm sm:text-base text-slate-100 font-medium">Dénormalisé (<span class="text-sky-300 font-mono">Étoile / Flocon</span>) — jointures minimisées pour accélérer la lecture</p>
+                        </div>
+                        <div class="pt-4">
+                            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">REQUÊTES</div>
+                            <p class="text-sm sm:text-base text-slate-100 font-medium"><code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded">SELECT</code> massifs avec agrégations (<code class="text-sky-300">SUM, AVG, GROUP BY</code> sur millions de lignes)</p>
+                        </div>
+                        <div class="pt-4">
+                            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">DONNÉES</div>
+                            <p class="text-sm sm:text-base text-slate-100 font-medium">Historique pluriannuel non-volatil, horodaté et immuable</p>
+                        </div>
+                        <div class="pt-4">
+                            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">OBJECTIF CLÉ</div>
+                            <p class="text-sm sm:text-base text-slate-100 font-medium">Débit de balayage massif (<span class="text-emerald-400 font-mono">Scan I/O</span>) sans jamais impacter la clinique</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFESSOR PEDAGOGICAL EXPLANATION BOX -->
+            <div class="prof-notes-panel glass-card rounded-2xl p-6 border-l-4 border-l-amber-400 bg-amber-950/10">
+                <div class="flex items-center gap-2 text-amber-300 font-bold text-sm uppercase tracking-wider mb-3">
+                    <span>🎓 Guide Pédagogique & Analogie pour les Étudiants</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-slate-300 leading-relaxed">
+                    <div class="bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+                        <h4 class="font-bold text-white mb-1">💡 L'Analogie de la Caisse vs l'Audit</h4>
+                        <p>Expliquez aux étudiants qu'<strong>OLTP</strong> est comme le caissier d'un supermarché aux heures de pointe : chaque bip de code-barre doit prendre 0,1 seconde. <strong>OLAP</strong> est l'expert-comptable qui veut compter tous les tickets des 5 dernières années. Si l'expert-comptable bloque la caisse pour compter, tout le magasin s'arrête !</p>
+                    </div>
+                    <div class="bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+                        <h4 class="font-bold text-white mb-1">🧬 Pourquoi 3NF vs Schéma en Étoile ?</h4>
+                        <p>En <strong>OLTP (3NF)</strong>, on découpe les données en 50 petites tables pour éviter d'écrire deux fois l'adresse d'un patient. Mais en <strong>OLAP</strong>, faire 50 <code>JOIN</code> sur 20 millions de lignes tue le processeur. On dénormalise donc en Étoile (1 table centrale + quelques dimensions).</p>
+                    </div>
+                    <div class="bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+                        <h4 class="font-bold text-white mb-1">🎯 Question Piège d'Examen</h4>
+                        <p><em>« Puis-je faire mon reporting Power BI directement sur la base MySQL/Oracle de production à midi ? »</em><br><strong>Réponse : Non !</strong> Risque d'épuisement du Buffer Pool, contention des verrous (Locks) et paralysie des urgences médicales.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             PAGE 2 : SIMULATEUR DE VERROUS & CONTENTION SYSTÈME
+             ===================================================================== -->
+        <section id="slide-1" class="slide-page hidden space-y-8">
+            <div>
+                <span class="inline-block badge-pill text-xs font-mono uppercase tracking-widest px-3.5 py-1 rounded-full mb-3">
+                    01B • LABORATOIRE EXPÉRIMENTAL EN TEMPS RÉEL
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+                    Simulateur de Verrous & <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">Contention Système</span>
+                </h2>
+                <p class="mt-3 text-slate-400 max-w-3xl text-base sm:text-lg">
+                    Expérimentez en direct ce qui arrive aux urgences hospitalières lorsqu'une requête analytique lourde est lancée directement sur la base opérationnelle OLTP.
+                </p>
+            </div>
+
+            <!-- Main Simulator Box matching screenshot 2 -->
+            <div class="glass-card rounded-3xl p-6 sm:p-8 border-2 border-dashed border-sky-500/30 shadow-2xl space-y-6">
+                <!-- Controls Row -->
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button onclick="triggerOltpCrisis()" id="btn-launch-attack" class="px-6 py-3.5 rounded-xl font-bold text-sm sm:text-base bg-gradient-to-r from-sky-400 to-indigo-500 hover:from-sky-300 hover:to-indigo-400 text-slate-950 shadow-lg shadow-sky-500/30 transition transform active:scale-95 flex items-center gap-2">
+                            <span>🔥</span>
+                            <span>Lancer Requête Analytique sur OLTP</span>
+                        </button>
+                        <button onclick="resetOltpSimulator()" class="px-5 py-3.5 rounded-xl font-semibold text-sm sm:text-base bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-2">
+                            <span>🔄</span>
+                            <span>Réinitialiser</span>
+                        </button>
+                    </div>
+
+                    <div id="sim-status-badge" class="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span>ÉTAT NOMINAL : Admissions fluides (3 ms)</span>
+                    </div>
+                </div>
+
+                <!-- Two Server Panels -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- LEFT: SERVEUR CLINIQUE OLTP (URGENCES) -->
+                    <div id="oltp-server-card" class="bg-slate-950/90 rounded-2xl p-6 border-2 border-slate-800 transition-all duration-500 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="text-2xl">🏥</span>
+                                    <h3 class="text-lg sm:text-xl font-bold text-white">Serveur Clinique OLTP (Urgences)</h3>
+                                </div>
+                                <span id="oltp-led" class="w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399]"></span>
+                            </div>
+
+                            <!-- Metrics Grid -->
+                            <div class="grid grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <div id="oltp-throughput" class="text-xs font-mono font-semibold text-emerald-400 mb-1">245 req/s (NOMINAL)</div>
+                                    <div id="oltp-latency" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">3.2 ms (FLUIDE)</div>
+                                    <div class="text-xs text-slate-400 mt-1">Latence d'admission</div>
+                                </div>
+                                <div>
+                                    <div id="oltp-cpu-pct" class="text-xs font-mono font-semibold text-emerald-400 mb-1">18%</div>
+                                    <div class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">CPU</div>
+                                    <div class="text-xs text-slate-400 mt-1">Charge Processeur & I/O</div>
+                                    <div class="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+                                        <div id="oltp-cpu-bar" class="bg-emerald-400 h-full transition-all duration-500" style="width: 18%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Lock Queue Visualizer -->
+                            <div class="bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 mb-4">
+                                <div class="flex justify-between text-[11px] font-mono text-slate-400 mb-2">
+                                    <span>FILE D'ATTENTE DES TRANSACTIONS (TABLE: VISITES)</span>
+                                    <span id="lock-mode-label" class="text-emerald-400">Verrous: X-Locks brefs (OK)</span>
+                                </div>
+                                <div id="oltp-queue-visual" class="flex items-center gap-2 overflow-hidden py-1">
+                                    <span class="px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs">✅ INSERT Patient_401 (2ms)</span>
+                                    <span class="px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs">✅ UPDATE Lit_12 (1ms)</span>
+                                    <span class="px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs">✅ INSERT Patient_402 (3ms)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alert Banner matching screenshot -->
+                        <div id="oltp-alert-box" class="rounded-xl p-4 bg-slate-900/60 border border-slate-800 text-slate-400 text-xs sm:text-sm text-center font-medium transition-all duration-300">
+                            ✅ Aucune contention : Les infirmières enregistrent les urgences instantanément.
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: ENTREPÔT DÉCISIONNEL (DATA WAREHOUSE) -->
+                    <div class="bg-slate-950/90 rounded-2xl p-6 border-2 border-slate-800 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="text-2xl">🏛️</span>
+                                    <h3 class="text-lg sm:text-xl font-bold text-white">Entrepôt Décisionnel (Data Warehouse)</h3>
+                                </div>
+                                <span class="w-3.5 h-3.5 rounded-full bg-sky-400 shadow-[0_0_12px_#38bdf8]"></span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <div class="text-xs font-mono text-slate-400 mb-1">Consolidé</div>
+                                    <div class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">0 Verrou</div>
+                                    <div class="text-xs text-slate-400 mt-1">Contention</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-mono text-slate-400 mb-1">Dédié</div>
+                                    <div class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">100%</div>
+                                    <div class="text-xs text-slate-400 mt-1">Disponibilité RH & Clinique</div>
+                                    <div class="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+                                        <div class="bg-sky-400 h-full" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Parallel Scan Visualizer -->
+                            <div class="bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 mb-4">
+                                <div class="flex justify-between text-[11px] font-mono text-slate-400 mb-2">
+                                    <span>LECTURE COLONNAIRE ISOLÉE (SNAPSHOT READ)</span>
+                                    <span class="text-sky-400">10 000 000 lignes scannées</span>
+                                </div>
+                                <div class="w-full bg-slate-950 rounded-lg p-2 border border-sky-500/20 flex items-center justify-between text-xs font-mono text-sky-300">
+                                    <span>⚡ Scan Vectorisé Parquet/Colonne</span>
+                                    <span class="bg-sky-500/20 px-2 py-0.5 rounded text-[11px]">0 impact OLTP</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-xs sm:text-sm text-slate-400 leading-relaxed bg-slate-900/40 p-4 rounded-xl border border-slate-800/80">
+                            L'isolation physique de l'entrepôt permet de scanner <strong class="text-slate-200">10 millions de consultations</strong> pour le Ministère de la Santé sans ralentir l'enregistrement d'un seul patient aux urgences.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFESSOR PEDAGOGICAL EXPLANATION BOX -->
+            <div class="prof-notes-panel glass-card rounded-2xl p-6 border-l-4 border-l-amber-400 bg-amber-950/10">
+                <div class="flex items-center gap-2 text-amber-300 font-bold text-sm uppercase tracking-wider mb-3">
+                    <span>🎓 Explication Technique Approfondie : S-Locks vs X-Locks</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-300 leading-relaxed">
+                    <div>
+                        <h4 class="font-bold text-white mb-1">🔒 Le Mécanisme du Blocage (Deadlock / Livelock)</h4>
+                        <p>Lorsqu'un analyste lance un <code>SELECT SUM(...)</code> massif avec un niveau d'isolation strict sur une base relationnelle classique, le moteur pose des <strong>Verrous Partagés (Shared Locks / S-Locks)</strong> sur des millions de pages mémoire. Tant que la lecture n'est pas finie, toute demande de <strong>Verrou Exclusif (Exclusive Lock / X-Lock)</strong> exigée par un <code>INSERT</code> ou <code>UPDATE</code> d'urgence médicale est mise en file d'attente (<em>Wait Queue</em>).</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white mb-1">🧹 Pollution du Cache Mémoire (Buffer Pool Thrashing)</h4>
+                        <p>Même avec MVCC (PostgreSQL/Oracle), lire 500 Go d'archives historiques chasse de la mémoire RAM (<em>Buffer Pool</em>) les index chauds des patients actuellement hospitalisés. Les requêtes OLTP doivent alors aller chercher les blocs sur le disque dur, faisant exploser la latence de 3 ms à plus de 14 000 ms !</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             PAGE 3 : 02 • LES 4 PILIERS INALTÉRABLES D'UN DATA WAREHOUSE (INMON)
+             ===================================================================== -->
+        <section id="slide-2" class="slide-page hidden space-y-8">
+            <div>
+                <span class="inline-block badge-pill text-xs font-mono uppercase tracking-widest px-3.5 py-1 rounded-full mb-3">
+                    02 • FONDEMENTS THÉORIQUES
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+                    Les 4 Piliers Inaltérables d'un <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-400">Data Warehouse</span>
+                </h2>
+                <p class="mt-3 text-slate-400 max-w-3xl text-base sm:text-lg">
+                    Formalisés par <strong class="text-slate-200">Bill Inmon</strong> (1990), père fondateur du Data Warehousing, ces 4 propriétés définissent l'essence même du décisionnel. <em>Cliquez sur chaque pilier pour animer la démonstration concrète.</em>
+                </p>
+            </div>
+
+            <!-- 4 Pillars Cards matching screenshot 3 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <!-- Pilier 1: Orienté Sujet -->
+                <div onclick="selectInmonPillar(0)" id="pillar-card-0" class="cursor-pointer glass-card rounded-2xl p-6 border-b-4 border-b-rose-500 hover:-translate-y-1 transition-all flex flex-col justify-between ring-2 ring-sky-400">
+                    <div>
+                        <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-3xl">
+                            🎯
+                        </div>
+                        <h3 class="text-lg font-bold text-white text-center">Orienté Sujet</h3>
+                        <p class="text-xs italic text-slate-400 text-center mb-4">Subject-Oriented</p>
+                        <p class="text-xs sm:text-sm text-slate-300 text-center leading-relaxed mb-5">
+                            Structuré autour des processus métier fondamentaux (la Visite, le Soin, la Facturation) et non autour des logiciels informatiques sources.
+                        </p>
+                    </div>
+                    <div class="bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 text-xs text-sky-300 leading-relaxed">
+                        💡 <strong class="text-amber-300">Cas Hospitalier :</strong> On unifie toutes les consultations, qu'elles proviennent du logiciel des Urgences, de la Cardiologie ou de la Radiologie.
+                    </div>
+                </div>
+
+                <!-- Pilier 2: Intégré -->
+                <div onclick="selectInmonPillar(1)" id="pillar-card-1" class="cursor-pointer glass-card rounded-2xl p-6 border-b-4 border-b-amber-400 hover:-translate-y-1 transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-3xl">
+                            🔗
+                        </div>
+                        <h3 class="text-lg font-bold text-white text-center">Intégré</h3>
+                        <p class="text-xs italic text-slate-400 text-center mb-4">Integrated</p>
+                        <p class="text-xs sm:text-sm text-slate-300 text-center leading-relaxed mb-5">
+                            Résout définitivement les discordances sémantiques, les formats de date divergents et les codifications incompatibles entre services.
+                        </p>
+                    </div>
+                    <div class="bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 text-xs text-sky-300 leading-relaxed">
+                        💡 <strong class="text-amber-300">Harmonisation :</strong> M/F convertis en standard, dates calées sur <code class="text-white">YYYYMMDD</code>, matricules médecins unifiés.
+                    </div>
+                </div>
+
+                <!-- Pilier 3: Non-Volatil -->
+                <div onclick="selectInmonPillar(2)" id="pillar-card-2" class="cursor-pointer glass-card rounded-2xl p-6 border-b-4 border-b-emerald-400 hover:-translate-y-1 transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-3xl">
+                            🔒
+                        </div>
+                        <h3 class="text-lg font-bold text-white text-center">Non-Volatil</h3>
+                        <p class="text-xs italic text-slate-400 text-center mb-4">Non-Volatile</p>
+                        <p class="text-xs sm:text-sm text-slate-300 text-center leading-relaxed mb-5">
+                            Mémoire immuable. Les données insérées ne sont ni modifiées ni effacées par les transactions courantes afin de figer la réalité historique.
+                        </p>
+                    </div>
+                    <div class="bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 text-xs text-sky-300 leading-relaxed">
+                        💡 <strong class="text-amber-300">Auditabilité :</strong> Un chiffre d'affaires publié en 2025 reste rigoureusement identique lors d'un audit en 2030.
+                    </div>
+                </div>
+
+                <!-- Pilier 4: Historisé -->
+                <div onclick="selectInmonPillar(3)" id="pillar-card-3" class="cursor-pointer glass-card rounded-2xl p-6 border-b-4 border-b-sky-400 hover:-translate-y-1 transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-3xl">
+                            ⏳
+                        </div>
+                        <h3 class="text-lg font-bold text-white text-center">Historisé</h3>
+                        <p class="text-xs italic text-slate-400 text-center mb-4">Time-Variant</p>
+                        <p class="text-xs sm:text-sm text-slate-300 text-center leading-relaxed mb-5">
+                            Chaque donnée est explicitement ancrée dans une dimension temporelle permettant d'analyser les tendances, la saisonnalité et l'évolution pluriannuelle.
+                        </p>
+                    </div>
+                    <div class="bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 text-xs text-sky-300 leading-relaxed">
+                        💡 <strong class="text-amber-300">Perspective :</strong> Permet de comparer la fréquentation hivernale des urgences entre 2024, 2025 et 2026.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Animated Lab for Selected Inmon Pillar -->
+            <div id="inmon-interactive-demo" class="glass-card rounded-2xl p-6 border border-sky-500/30">
+                <!-- Populated dynamically by selectInmonPillar() -->
+            </div>
+
+            <!-- PROFESSOR PEDAGOGICAL EXPLANATION BOX -->
+            <div class="prof-notes-panel glass-card rounded-2xl p-6 border-l-4 border-l-amber-400 bg-amber-950/10">
+                <div class="flex items-center gap-2 text-amber-300 font-bold text-sm uppercase tracking-wider mb-2">
+                    <span>🎓 Astuce Mémo pour les Étudiants (Acronyme S.I.N.T / O.I.N.H)</span>
+                </div>
+                <p class="text-sm text-slate-300 leading-relaxed">
+                    Aux examens de Business Intelligence, la définition de Bill Inmon est systématiquement demandée : <em>« A Data Warehouse is a <strong>Subject-Oriented</strong>, <strong>Integrated</strong>, <strong>Non-Volatile</strong>, and <strong>Time-Variant</strong> collection of data in support of management's decisions. »</em> Insistez particulièrement sur le pilier <strong>Intégré</strong> : 70% du budget d'un projet Data Warehouse passe dans l'ETL pour nettoyer et standardiser les données sales (ex: unifier <code>'H'</code>, <code>'M'</code>, <code>'1'</code>, <code>'Masculin'</code> en un seul code propre).
+                </p>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             PAGE 4 : 03 • LA CONCEPTION DIMENSIONNELLE EN 4 ÉTAPES (KIMBALL)
+             ===================================================================== -->
+        <section id="slide-3" class="slide-page hidden space-y-8">
+            <div>
+                <span class="inline-block badge-pill text-xs font-mono uppercase tracking-widest px-3.5 py-1 rounded-full mb-3">
+                    03 • MÉTHODOLOGIE DE MODÉLISATION
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+                    La Conception Dimensionnelle en <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-purple-400">4 Étapes (Kimball)</span>
+                </h2>
+                <p class="mt-3 text-slate-400 max-w-3xl text-base sm:text-lg">
+                    La méthodologie canonique de <strong class="text-slate-200">Ralph Kimball</strong> pour modéliser n'importe quel entrepôt de données sans faille conceptuelle.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- Left Timeline matching screenshot 4 (7 cols) -->
+                <div class="lg:col-span-7 relative pl-8 space-y-6 before:content-[''] before:absolute before:left-5 before:top-6 before:bottom-6 before:w-0.5 before:bg-gradient-to-b before:from-sky-400 before:via-purple-400 before:to-emerald-400">
+                    
+                    <!-- Step 1 -->
+                    <div onclick="selectKimballStep(1)" id="kimball-step-1" class="cursor-pointer relative glass-card rounded-2xl p-6 border border-sky-500/50 transition-all hover:border-sky-400">
+                        <div class="absolute -left-8 top-6 w-10 h-10 rounded-full bg-sky-400 text-slate-950 font-extrabold flex items-center justify-center shadow-[0_0_20px_#38bdf8]">
+                            1
+                        </div>
+                        <div class="pl-4">
+                            <h3 class="text-lg sm:text-xl font-bold text-white mb-1">Étape 1 : Choisir le Processus Métier</h3>
+                            <p class="text-xs sm:text-sm text-slate-300 mb-3">
+                                Identifier l'activité opérationnelle génératrice d'événements physiques à optimiser. On recherche le <strong class="text-white">verbe d'action</strong>.
+                            </p>
+                            <div class="bg-slate-900/90 border-l-4 border-l-sky-400 p-3 rounded-r-xl text-xs sm:text-sm text-slate-200">
+                                🏥 <strong class="text-sky-300">Retenu pour l'hôpital :</strong> L'acte de consultation médicale (visite du patient auprès d'un praticien soignant).
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div onclick="selectKimballStep(2)" id="kimball-step-2" class="cursor-pointer relative glass-card rounded-2xl p-6 border border-slate-800 transition-all hover:border-purple-400">
+                        <div class="absolute -left-8 top-6 w-10 h-10 rounded-full bg-purple-400 text-slate-950 font-extrabold flex items-center justify-center shadow-[0_0_20px_#c084fc]">
+                            2
+                        </div>
+                        <div class="pl-4">
+                            <h3 class="text-lg sm:text-xl font-bold text-white mb-1">Étape 2 : Déclarer le Grain (Règle d'or absolue)</h3>
+                            <p class="text-xs sm:text-sm text-slate-300 mb-3">
+                                Déterminer avec une précision chirurgicale ce qu'une seule ligne dans la table de faits représente physiquement.
+                            </p>
+                            <div class="bg-slate-900/90 border-l-4 border-l-purple-400 p-3 rounded-r-xl text-xs sm:text-sm text-slate-200">
+                                🔬 <strong class="text-purple-300">Grain atomique retenu :</strong> <em>« Une ligne unique = un acte de soin dispensé à un patient par un praticien à un instant précis. »</em> Ce grain le plus fin interdit toute perte d'information.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div onclick="selectKimballStep(3)" id="kimball-step-3" class="cursor-pointer relative glass-card rounded-2xl p-6 border border-slate-800 transition-all hover:border-pink-400">
+                        <div class="absolute -left-8 top-6 w-10 h-10 rounded-full bg-pink-400 text-slate-950 font-extrabold flex items-center justify-center shadow-[0_0_20px_#f472b6]">
+                            3
+                        </div>
+                        <div class="pl-4">
+                            <h3 class="text-lg sm:text-xl font-bold text-white mb-1">Étape 3 : Identifier les Dimensions (Le Contexte)</h3>
+                            <p class="text-xs sm:text-sm text-slate-300 mb-3">
+                                Répondre aux questions interrogatives : <strong class="text-white">Qui ? Quand ? Où ? Quoi ? Dans quel contexte ?</strong>
+                            </p>
+                            <div class="bg-slate-900/90 border-l-4 border-l-pink-400 p-3 rounded-r-xl text-xs sm:text-sm text-slate-200">
+                                📐 <strong class="text-pink-300">Axes retenus :</strong> <code class="text-white">DIM_TEMPS</code> (Quand ?), <code class="text-white">DIM_PATIENT</code> (Pour qui ? Âge, genre, ville), <code class="text-white">DIM_PRATICIEN</code> (Par qui ? Spécialité, statut).
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div onclick="selectKimballStep(4)" id="kimball-step-4" class="cursor-pointer relative glass-card rounded-2xl p-6 border border-slate-800 transition-all hover:border-emerald-400">
+                        <div class="absolute -left-8 top-6 w-10 h-10 rounded-full bg-emerald-400 text-slate-950 font-extrabold flex items-center justify-center shadow-[0_0_20px_#34d399]">
+                            4
+                        </div>
+                        <div class="pl-4">
+                            <h3 class="text-lg sm:text-xl font-bold text-white mb-1">Étape 4 : Identifier les Faits (Les Mesures Chiffrées)</h3>
+                            <p class="text-xs sm:text-sm text-slate-300 mb-3">
+                                Extraire les grandeurs quantitatives numériques rattachées à l'événement et répondant strictement au grain fixé.
+                            </p>
+                            <div class="bg-slate-900/90 border-l-4 border-l-emerald-400 p-3 rounded-r-xl text-xs sm:text-sm text-slate-200">
+                                📏 <strong class="text-emerald-300">Faits retenus :</strong> <code class="text-emerald-300">duree_intervention_min</code>, <code class="text-emerald-300">frais_consultation</code>, et le compteur technique <code class="text-emerald-300">nb_visites = 1</code>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Interactive Pedagogical Visualizer (5 cols) -->
+                <div class="lg:col-span-5 glass-card rounded-2xl p-6 border border-slate-800 sticky top-24">
+                    <div id="kimball-inspector-content">
+                        <!-- Dynamically rendered by selectKimballStep() -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             PAGE 5 : 04 • SCHÉMA EN ÉTOILE DU SYSTÈME HOSPITALIER
+             ===================================================================== -->
+        <section id="slide-4" class="slide-page hidden space-y-8">
+            <div>
+                <span class="inline-block badge-pill text-xs font-mono uppercase tracking-widest px-3.5 py-1 rounded-full mb-3">
+                    04 • MODÉLISATION CONCEPTUELLE
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+                    Schéma en Étoile du <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">Système Hospitalier</span>
+                </h2>
+                <p class="mt-3 text-slate-400 max-w-3xl text-base sm:text-lg">
+                    Cliquez sur n'importe quelle table du schéma en étoile pour inspecter ses champs, ses clés de substitution (<strong class="text-slate-200">Surrogate Keys</strong>) et son additivité mathématique.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <!-- Left Interactive Star Schema Canvas matching screenshot 5 (7 cols) -->
+                <div class="lg:col-span-7 glass-card rounded-2xl p-6 border border-slate-800 relative flex flex-col justify-between min-h-[540px] overflow-hidden">
+                    <!-- Animated SVG Connecting Lines -->
+                    <svg class="Ignore pointer-events-none absolute inset-0 w-full h-full z-0" viewBox="0 0 600 500" preserveAspectRatio="none">
+                        <!-- Center to Top (DIM_TEMPS) -->
+                        <line x1="300" y1="260" x2="300" y2="110" stroke="#38bdf8" stroke-width="2.5" class="svg-flow-line" />
+                        <!-- Center to Left (DIM_PATIENT) -->
+                        <line x1="300" y1="280" x2="110" y2="280" stroke="#a855f7" stroke-width="2.5" class="svg-flow-line" />
+                        <!-- Center to Right (DIM_PRATICIEN) -->
+                        <line x1="300" y1="280" x2="490" y2="280" stroke="#fbbf24" stroke-width="2.5" class="svg-flow-line" />
+                    </svg>
+
+                    <!-- Top Dimension: DIM_TEMPS -->
+                    <div class="relative z-10 flex justify-center">
+                        <div onclick="inspectStarTable('DIM_TEMPS')" id="star-node-DIM_TEMPS" class="cursor-pointer w-64 rounded-2xl bg-[#161936]/95 border-2 border-indigo-500/50 hover:border-sky-400 p-4 shadow-xl transition transform hover:scale-105">
+                            <div class="flex items-center gap-2 font-bold text-indigo-300 text-sm mb-2">
+                                <span>🕒</span>
+                                <span>DIM_TEMPS</span>
+                            </div>
+                            <ul class="space-y-1 text-xs font-mono">
+                                <li class="text-rose-400 font-semibold">🔑 date_key (YYYYMMDD)</li>
+                                <li class="text-slate-300">📅 date_complete</li>
+                                <li class="text-slate-300">🌅 moment_journee</li>
+                                <li class="text-slate-300">🗓️ mois / trimestre / annee</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Middle Row: DIM_PATIENT + FACT_VISITES_MEDICALES + DIM_PRATICIEN -->
+                    <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 items-center my-4">
+                        <!-- Left: DIM_PATIENT -->
+                        <div onclick="inspectStarTable('DIM_PATIENT')" id="star-node-DIM_PATIENT" class="cursor-pointer rounded-2xl bg-[#161936]/95 border-2 border-indigo-500/50 hover:border-sky-400 p-4 shadow-xl transition transform hover:scale-105">
+                            <div class="flex items-center gap-2 font-bold text-indigo-300 text-sm mb-2">
+                                <span>👤</span>
+                                <span>DIM_PATIENT</span>
+                            </div>
+                            <ul class="space-y-1 text-xs font-mono">
+                                <li class="text-rose-400 font-semibold">🔑 patient_key (Surrogate)</li>
+                                <li class="text-slate-300">⚧ genre (M/F)</li>
+                                <li class="text-slate-300">🎂 age_au_soin / tranche_age</li>
+                                <li class="text-slate-300">📍 ville_provenance / region</li>
+                            </ul>
+                        </div>
+
+                        <!-- Center: FACT_VISITES_MEDICALES -->
+                        <div onclick="inspectStarTable('FACT_VISITES')" id="star-node-FACT_VISITES" class="cursor-pointer rounded-2xl bg-gradient-to-b from-[#172a4f] to-[#111c38] border-2 border-sky-400 p-5 shadow-[0_0_30px_rgba(56,189,248,0.3)] transition transform hover:scale-105">
+                            <div class="flex items-center gap-2 font-extrabold text-sky-300 text-sm mb-3">
+                                <span>🏥</span>
+                                <span>FACT_VISITES_MEDICALES</span>
+                            </div>
+                            <ul class="space-y-1.5 text-xs font-mono border-b border-slate-700 pb-2.5 mb-2.5">
+                                <li class="text-amber-300">🔗 date_key (FK)</li>
+                                <li class="text-amber-300">🔗 patient_key (FK)</li>
+                                <li class="text-amber-300">🔗 praticien_key (FK)</li>
+                            </ul>
+                            <ul class="space-y-1.5 text-xs font-mono">
+                                <li class="text-emerald-400 font-semibold">📏 duree_intervention_min</li>
+                                <li class="text-emerald-400 font-semibold">📏 frais_consultation (MAD)</li>
+                                <li class="text-emerald-400 font-semibold">📏 nb_visites (= 1)</li>
+                            </ul>
+                        </div>
+
+                        <!-- Right: DIM_PRATICIEN -->
+                        <div onclick="inspectStarTable('DIM_PRATICIEN')" id="star-node-DIM_PRATICIEN" class="cursor-pointer rounded-2xl bg-[#161936]/95 border-2 border-indigo-500/50 hover:border-sky-400 p-4 shadow-xl transition transform hover:scale-105">
+                            <div class="flex items-center gap-2 font-bold text-indigo-300 text-sm mb-2">
+                                <span>👨‍⚕️</span>
+                                <span>DIM_PRATICIEN</span>
+                            </div>
+                            <ul class="space-y-1 text-xs font-mono">
+                                <li class="text-rose-400 font-semibold">🔑 praticien_key (Surrogate)</li>
+                                <li class="text-slate-300">🩺 specialite_medicale</li>
+                                <li class="text-slate-300">📊 anciennete_annees</li>
+                                <li class="text-slate-300">🏷️ statut_intervenant</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="relative z-10 text-center text-xs text-slate-400 font-mono">
+                        💡 Architecture dénormalisée : 1 seule jointure entre la table de faits et chaque axe d'analyse (jointure en étoile / Star Join).
+                    </div>
+                </div>
+
+                <!-- Right Inspector Panel matching screenshot 5 (5 cols) -->
+                <div class="lg:col-span-5 glass-card rounded-2xl p-6 sm:p-7 border border-slate-800 flex flex-col justify-between" id="star-inspector-panel">
+                    <!-- Populated by inspectStarTable() -->
+                </div>
+            </div>
+
+            <!-- PROFESSOR PEDAGOGICAL EXPLANATION BOX -->
+            <div class="prof-notes-panel glass-card rounded-2xl p-6 border-l-4 border-l-amber-400 bg-amber-950/10">
+                <div class="flex items-center gap-2 text-amber-300 font-bold text-sm uppercase tracking-wider mb-2">
+                    <span>🎓 Deux Concepts Fondamentaux à Expliquer aux Étudiants</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-300">
+                    <div>
+                        <strong class="text-white">1. Pourquoi des Clés de Substitution (Surrogate Keys) et pas le CIN ou Matricule ?</strong><br>
+                        Les clés métier (ex: CIN <code>AB123456</code>) sont des chaînes de caractères lourdes (20 octets), peuvent changer ou être réattribuées, et empêchent de gérer l'historique (SCD Type 2). Une <em>Surrogate Key</em> est un simple entier séquentiel (<code>INT 4 octets</code>) généré par le Data Warehouse : jointures ultra-rapides et indépendance totale vis-à-vis des logiciels sources.
+                    </div>
+                    <div>
+                        <strong class="text-white">2. Le Piège des Mesures Non-Additives (Ratios & Moyennes) :</strong><br>
+                        Ne stockez jamais un pourcentage ou une durée moyenne pré-calculée pour les additionner ! La somme de deux moyennes n'est pas la moyenne des sommes. Stockez toujours le numérateur (<code>duree_intervention_min</code>) et le dénominateur (<code>nb_visites = 1</code>) qui sont <strong>100% additifs</strong>.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             PAGE 6 : 05 • CONSTRUCTEUR SQL LIVE & MOTEUR DE REQUÊTES
+             ===================================================================== -->
+        <section id="slide-5" class="slide-page hidden space-y-8">
+            <div>
+                <span class="inline-block badge-pill text-xs font-mono uppercase tracking-widest px-3.5 py-1 rounded-full mb-3">
+                    05 • INTERROGATION DÉCISIONNELLE EN DIRECT
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+                    Constructeur SQL Live & <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-400">Moteur de Requêtes</span>
+                </h2>
+                <p class="mt-3 text-slate-400 max-w-3xl text-base sm:text-lg">
+                    Composez visuellement votre requête décisionnelle. Observez la génération SQL dynamique sur le schéma en étoile et la restitution instantanée des données.
+                </p>
+            </div>
+
+            <!-- Main Interactive SQL Composer Card matching screenshot 6 -->
+            <div class="glass-card rounded-3xl p-6 sm:p-8 border border-slate-800 space-y-6 shadow-2xl">
+                <!-- 3 Dropdown Selectors -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">AXE 1 (SPÉCIALITÉ / MÉDECIN)</label>
+                        <select id="sql-axe1" onchange="updateLiveSqlBuilder()" class="w-full bg-slate-900 border border-slate-700 hover:border-sky-400 rounded-xl px-4 py-3 text-sm text-white font-medium focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="specialite">Spécialité Médicale (p.specialite)</option>
+                            <option value="statut">Statut Intervenant (p.statut_intervenant)</option>
+                            <option value="anciennete">Ancienneté Praticien (p.tranche_anciennete)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">AXE 2 (PATIENT / GÉOGRAPHIE / TEMPS)</label>
+                        <select id="sql-axe2" onchange="updateLiveSqlBuilder()" class="w-full bg-slate-900 border border-slate-700 hover:border-sky-400 rounded-xl px-4 py-3 text-sm text-white font-medium focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="tranche_age">Tranche d'Âge du Patient (pa.tranche_age)</option>
+                            <option value="ville">Ville de Provenance (pa.ville_provenance)</option>
+                            <option value="trimestre">Trimestre & Année (t.trimestre)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">INDICATEUR CHIFFRÉ (KPI)</label>
+                        <select id="sql-kpi" onchange="updateLiveSqlBuilder()" class="w-full bg-slate-900 border border-slate-700 hover:border-sky-400 rounded-xl px-4 py-3 text-sm text-white font-medium focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="ca">Chiffre d'Affaires Total (MAD)</option>
+                            <option value="duree">Durée Totale d'Intervention (Heures)</option>
+                            <option value="volume">Volume Total de Consultations (Actes)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Generated SQL Code Block -->
+                <div class="bg-[#0b101e] rounded-2xl p-5 border border-slate-800 font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto" id="sql-code-display">
+                    <!-- Dynamically populated by JS -->
+                </div>
+
+                <!-- Dynamic Results Table -->
+                <div class="bg-[#0b101e] rounded-2xl border border-slate-800 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-900/90 border-b border-slate-800 text-xs font-semibold text-sky-400">
+                                    <th class="py-3.5 px-5" id="th-col1">Spécialité</th>
+                                    <th class="py-3.5 px-5" id="th-col2">Tranche d'Âge</th>
+                                    <th class="py-3.5 px-5" id="th-col3">Indicateur Calculé</th>
+                                    <th class="py-3.5 px-5 w-1/3">Distribution Visuelle</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sql-results-tbody" class="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                                <!-- Dynamically populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFESSOR PEDAGOGICAL EXPLANATION BOX -->
+            <div class="prof-notes-panel glass-card rounded-2xl p-6 border-l-4 border-l-amber-400 bg-amber-950/10">
+                <div class="flex items-center gap-2 text-amber-300 font-bold text-sm uppercase tracking-wider mb-2">
+                    <span>🎓 Anatomie d'une Requête Décisionnelle (Pattern Star-Query)</span>
+                </div>
+                <p class="text-sm text-slate-300 leading-relaxed">
+                    Montrez aux étudiants que <strong>toutes</strong> les requêtes générées par Power BI ou Tableau sur un schéma en étoile suivent exactement le même squelette mathématique :<br>
+                    1️⃣ Les colonnes descriptives dans le <code>SELECT</code> et le <code>GROUP BY</code> proviennent exclusivement des <strong>Tables de Dimensions</strong>.<br>
+                    2️⃣ Les fonctions d'agrégation (<code>SUM</code>, <code>COUNT</code>, <code>AVG</code>) portent exclusivement sur la <strong>Table de Faits</strong>.<br>
+                    3️⃣ Les jointures (<code>JOIN</code>) relient toujours une clé étrangère de la table de faits à la <em>Surrogate Key</em> de la dimension.
+                </p>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             PAGE 7 : 06 • LE CUBE OLAP & LES 5 OPÉRATIONS CANONIQUES
+             ===================================================================== -->
+        <section id="slide-6" class="slide-page hidden space-y-8">
+            <div>
+                <span class="inline-block badge-pill text-xs font-mono uppercase tracking-widest px-3.5 py-1 rounded-full mb-3">
+                    06 • NAVIGATION MULTIDIMENSIONNELLE
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+                    Le Cube OLAP & les <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">5 Opérations Canoniques</span>
+                </h2>
+                <p class="mt-3 text-slate-400 max-w-3xl text-base sm:text-lg">
+                    Visualisez en 3D comment les décideurs manipulent le cube de données médicales pour extraire l'information stratégique.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <!-- Left 3D Isometric Cube Visualizer matching screenshot 7 (6 cols) -->
+                <div class="lg:col-span-6 glass-card rounded-3xl p-6 border border-slate-800 flex flex-col items-center justify-between min-h-[430px] relative overflow-hidden">
+                    <div class="w-full flex justify-between items-center text-xs font-mono text-slate-400">
+                        <span>HYPERCUBE 3D HOSPITALIER</span>
+                        <span id="cube-mode-badge" class="text-sky-400 font-bold">Mode : Dice (Sous-Cube)</span>
+                    </div>
+
+                    <!-- Interactive SVG Isometric 3D Cube -->
+                    <div id="olap-cube-container" class="my-4 w-full max-w-[340px] h-[270px] flex items-center justify-center transition-transform duration-700">
+                        <svg id="olap-svg-cube" viewBox="0 0 300 260" class="w-full h-full drop-shadow-[0_0_25px_rgba(56,189,248,0.25)]">
+                            <!-- Rendered dynamically by renderOlapCube() -->
+                        </svg>
+                    </div>
+
+                    <div class="text-center">
+                        <p id="cube-axes-label" class="text-xs sm:text-sm font-bold text-amber-400 tracking-wide">
+                            Dimensions : Temps (X) × Spécialité (Y) × Patient/Région (Z)
+                        </p>
+                        <p class="text-[11px] text-slate-400 mt-1">Chaque cellule (voxel) contient : SUM(Frais MAD) &amp; COUNT(Visites)</p>
+                    </div>
+                </div>
+
+                <!-- Right Controls & Explanation matching screenshot 7 (6 cols) -->
+                <div class="lg:col-span-6 space-y-6">
+                    <!-- 5 Canonical Buttons -->
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="setOlapOperation('slice')" id="olap-btn-slice" class="px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition flex items-center gap-2 bg-slate-900 border-slate-700 text-slate-200 hover:border-sky-400">
+                            <span>🔪</span>
+                            <span>Slice (Trancher)</span>
+                        </button>
+                        <button onclick="setOlapOperation('dice')" id="olap-btn-dice" class="px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition flex items-center gap-2 bg-sky-400 text-slate-950 border-sky-300 shadow-lg shadow-sky-400/30">
+                            <span>🎲</span>
+                            <span>Dice (Découper)</span>
+                        </button>
+                        <button onclick="setOlapOperation('drilldown')" id="olap-btn-drilldown" class="px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition flex items-center gap-2 bg-slate-900 border-slate-700 text-slate-200 hover:border-sky-400">
+                            <span>🔍</span>
+                            <span>Drill-Down (Forer)</span>
+                        </button>
+                        <button onclick="setOlapOperation('rollup')" id="olap-btn-rollup" class="px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition flex items-center gap-2 bg-slate-900 border-slate-700 text-slate-200 hover:border-sky-400">
+                            <span>🔭</span>
+                            <span>Roll-Up (Agréger)</span>
+                        </button>
+                        <button onclick="setOlapOperation('pivot')" id="olap-btn-pivot" class="px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition flex items-center gap-2 bg-slate-900 border-slate-700 text-slate-200 hover:border-sky-400">
+                            <span>🔄</span>
+                            <span>Pivot (Pivoter)</span>
+                        </button>
+                    </div>
+
+                    <!-- Operation Details Card -->
+                    <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+                        <h3 id="olap-op-title" class="text-xl font-bold text-sky-400">Opération : Dice (Découper en sous-cube)</h3>
+                        <p id="olap-op-desc" class="text-sm text-slate-300 leading-relaxed">
+                            Applique des filtres simultanés sur au moins 2 dimensions pour extraire un sous-cube spécifique d'analyse.
+                        </p>
+                        <div class="bg-[#080d1a] rounded-xl p-4 border border-slate-800 font-mono text-xs sm:text-sm text-amber-300 leading-relaxed" id="olap-op-sql">
+                            WHERE p.specialite IN ('Cardiologie', 'Neurologie')<br>
+                            AND pa.ville_provenance = 'Rabat'<br>
+                            AND t.annee = 2026;
+                        </div>
+                        <div id="olap-op-hospital-case" class="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-200">
+                            🏥 <strong>Usage Directeur :</strong> Isoler uniquement les consultations de Cardiologie et Neurologie des patients venant de Rabat en 2026.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFESSOR PEDAGOGICAL EXPLANATION BOX -->
+            <div class="prof-notes-panel glass-card rounded-2xl p-6 border-l-4 border-l-amber-400 bg-amber-950/10">
+                <div class="flex items-center gap-2 text-amber-300 font-bold text-sm uppercase tracking-wider mb-2">
+                    <span>🎓 Comment distinguer Slice vs Dice et Drill-Down vs Roll-Up ?</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-300">
+                    <div>
+                        <strong class="text-white">🔪 Slice vs 🎲 Dice (Filtrage) :</strong><br>
+                        • <strong>Slice (Tranche) :</strong> On fixe <strong>1 seule dimension</strong> sur une valeur unique (ex: <code>Annee = 2026</code>). On passe d'un cube 3D à une feuille 2D.<br>
+                        • <strong>Dice (Dé) :</strong> On filtre sur <strong>2 ou 3 dimensions</strong> avec des plages de valeurs. On obtient un plus petit cube 3D (comme un dé).
+                    </div>
+                    <div>
+                        <strong class="text-white">🔍 Drill-Down vs 🔭 Roll-Up (Hiérarchie / Granularité) :</strong><br>
+                        • <strong>Drill-Down :</strong> On zoome vers plus de détails (Année ➔ Trimestre ➔ Mois ➔ Jour).<br>
+                        • <strong>Roll-Up :</strong> On dézoome en agrégeant les chiffres (Ville ➔ Région ➔ Pays).
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             PAGE 8 : 07 • PIPELINE EN 5 COUCHES & ARCHITECTURE MÉDAILLON
+             ===================================================================== -->
+        <section id="slide-7" class="slide-page hidden space-y-8">
+            <div>
+                <span class="inline-block badge-pill text-xs font-mono uppercase tracking-widest px-3.5 py-1 rounded-full mb-3">
+                    07 • ARCHITECTURE TECHNIQUE
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+                    Le Pipeline en 5 Couches & <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-amber-400">L'Architecture Médaillon</span>
+                </h2>
+                <p class="mt-3 text-slate-400 max-w-3xl text-base sm:text-lg">
+                    Du système transactionnel jusqu'aux dashboards exécutifs de Business Intelligence. <em>Cliquez sur une couche ou un médaillon pour inspecter la transformation réelle d'une donnée patient.</em>
+                </p>
+            </div>
+
+            <!-- 5 Layers Stack matching screenshot 8 -->
+            <div class="space-y-3">
+                <div onclick="inspectPipelineLayer(1)" class="cursor-pointer glass-card rounded-2xl p-4 sm:p-5 border border-slate-800 hover:border-rose-500/60 transition flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-400 font-bold flex items-center justify-center shrink-0">1</div>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-bold text-white">Couche Sources Hétérogènes</h3>
+                            <p class="text-xs sm:text-sm text-slate-400">Logiciels métier cliniques (Dossier Patient Informatisé), laboratoires, facturation SAP, capteurs IoT.</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono text-rose-400 hidden sm:inline">OLTP / JSON / CSV ▶</span>
+                </div>
+
+                <div onclick="inspectPipelineLayer(2)" class="cursor-pointer glass-card rounded-2xl p-4 sm:p-5 border border-slate-800 hover:border-amber-500/60 transition flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-400 font-bold flex items-center justify-center shrink-0">2</div>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-bold text-white">Couche d'Intégration ETL / ELT</h3>
+                            <p class="text-xs sm:text-sm text-slate-400">Extraction des flux, déduplication, nettoyage des adresses, harmonisation des dates et attribution des Surrogate Keys.</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono text-amber-400 hidden sm:inline">Airflow / dbt / Talend ▶</span>
+                </div>
+
+                <div onclick="inspectPipelineLayer(3)" class="cursor-pointer glass-card rounded-2xl p-4 sm:p-5 border border-slate-800 hover:border-sky-500/60 transition flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/40 text-sky-400 font-bold flex items-center justify-center shrink-0">3</div>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-bold text-white">Entrepôt Central (EDW) & Data Marts</h3>
+                            <p class="text-xs sm:text-sm text-slate-400">Stockage unifié haute disponibilité et comptoirs thématiques spécialisés (RH, Finance Médicale, Épidémiologie).</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono text-sky-400 hidden sm:inline">Snowflake / BigQuery ▶</span>
+                </div>
+
+                <div onclick="inspectPipelineLayer(4)" class="cursor-pointer glass-card rounded-2xl p-4 sm:p-5 border border-slate-800 hover:border-indigo-500/60 transition flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/40 text-indigo-400 font-bold flex items-center justify-center shrink-0">4</div>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-bold text-white">Moteur Analytique OLAP</h3>
+                            <p class="text-xs sm:text-sm text-slate-400">Stockage en colonnes vectorisé (Parquet / BigQuery / Vertica) accélérant les calculs d'agrégations par 100x.</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono text-indigo-400 hidden sm:inline">Columnar Storage ▶</span>
+                </div>
+
+                <div onclick="inspectPipelineLayer(5)" class="cursor-pointer glass-card rounded-2xl p-4 sm:p-5 border border-slate-800 hover:border-emerald-500/60 transition flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-bold flex items-center justify-center shrink-0">5</div>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-bold text-white">Restitution Décisionnelle & BI</h3>
+                            <p class="text-xs sm:text-sm text-slate-400">Tableaux de bord dynamiques (Power BI, Tableau), rapports réglementaires Ministère et modèles prédictifs IA.</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono text-emerald-400 hidden sm:inline">Power BI / Tableau ▶</span>
+                </div>
+            </div>
+
+            <!-- 3 Medallion Cards matching screenshot 8 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Bronze -->
+                <div onclick="inspectMedallion('bronze')" id="medallion-bronze" class="cursor-pointer glass-card rounded-2xl p-6 border-2 border-amber-700/60 bg-gradient-to-b from-amber-950/25 to-slate-950 text-center hover:scale-[1.02] transition">
+                    <div class="text-4xl mb-3">🥉</div>
+                    <h4 class="text-lg font-bold text-amber-500 mb-2">Bronze (Raw Data)</h4>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+                        Données brutes fidèles aux sources, stockées en ingestion sans altération pour historique complet et rejouabilité.
+                    </p>
+                    <pre class="text-left text-[11px] font-mono bg-slate-950/90 p-3 rounded-xl border border-amber-800/40 text-amber-200/90 overflow-x-auto">{"dt": "15/06/26", "pat": "p-889", "sexe": "H", "mnt": "450 MAD"}</pre>
+                </div>
+
+                <!-- Silver -->
+                <div onclick="inspectMedallion('silver')" id="medallion-silver" class="cursor-pointer glass-card rounded-2xl p-6 border-2 border-slate-400/50 bg-gradient-to-b from-slate-800/30 to-slate-950 text-center hover:scale-[1.02] transition">
+                    <div class="text-4xl mb-3">🥈</div>
+                    <h4 class="text-lg font-bold text-slate-200 mb-2">Silver (Conformed)</h4>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+                        Données nettoyées, standardisées, dédoublonnées et validées selon les règles de gouvernance clinique.
+                    </p>
+                    <pre class="text-left text-[11px] font-mono bg-slate-950/90 p-3 rounded-xl border border-slate-600/40 text-sky-200 overflow-x-auto">date_iso: 2026-06-15 | matricule: P-889 | genre: M | frais: 450.00</pre>
+                </div>
+
+                <!-- Gold -->
+                <div onclick="inspectMedallion('gold')" id="medallion-gold" class="cursor-pointer glass-card rounded-2xl p-6 border-2 border-yellow-400/60 bg-gradient-to-b from-yellow-950/25 to-slate-950 text-center hover:scale-[1.02] transition">
+                    <div class="text-4xl mb-3">🥇</div>
+                    <h4 class="text-lg font-bold text-yellow-400 mb-2">Gold (Dimensional)</h4>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+                        Schémas en étoile prêts à l'emploi pour les directeurs d'hôpitaux et les analystes BI (Clés Surrogate + Agrégats).
+                    </p>
+                    <pre class="text-left text-[11px] font-mono bg-slate-950/90 p-3 rounded-xl border border-yellow-600/40 text-emerald-300 overflow-x-auto">date_key: 20260615 | patient_key: 4099 | frais_mad: 450 | nb: 1</pre>
+                </div>
+            </div>
+
+            <!-- Live Pipeline Detail Banner -->
+            <div id="pipeline-detail-banner" class="glass-card rounded-2xl p-5 border border-sky-500/30 text-sm text-slate-200">
+                💡 <strong>Focus Technique (Couche 4 — Stockage en Colonnes) :</strong> Dans une base classique orientée lignes (Postgres/MySQL), pour additionner <code>frais_consultation</code>, le disque doit lire le Nom, le Prénom, l'Adresse et le Téléphone de chaque ligne. En format colonnaire (Parquet / BigQuery), seule la colonne <code>frais_consultation</code> est lue physiquement sur le disque : <strong>95% d'I/O économisés !</strong>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             PAGE 9 : 08 • L'ÉVOLUTION LENTE DES DIMENSIONS (SCD TYPE 1, 2, 3)
+             ===================================================================== -->
+        <section id="slide-8" class="slide-page hidden space-y-8">
+            <div>
+                <span class="inline-block badge-pill text-xs font-mono uppercase tracking-widest px-3.5 py-1 rounded-full mb-3">
+                    08 • GESTION DE L'HISTORIQUE
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+                    L'Évolution Lente des <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">Dimensions (SCD)</span>
+                </h2>
+                <p class="mt-3 text-slate-400 max-w-3xl text-base sm:text-lg">
+                    Comment gérer un praticien qui change de spécialité ou un patient (<code class="text-sky-300">Matricule P-889</code>) qui déménage de <strong class="text-rose-300">Rabat</strong> à <strong class="text-emerald-300">Casablanca</strong> le 15 Juin 2026 ?
+                </p>
+            </div>
+
+            <!-- SCD Type Selector Buttons matching screenshot 9 -->
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="setScdType(1)" id="scd-btn-1" class="px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition bg-slate-900 border-slate-700 text-slate-300 hover:border-indigo-400">
+                        SCD Type 1 : Écrasement
+                    </button>
+                    <button onclick="setScdType(2)" id="scd-btn-2" class="px-5 py-3 rounded-xl text-xs sm:text-sm font-bold border transition bg-indigo-500 text-white border-indigo-400 shadow-[0_0_25px_rgba(99,102,241,0.45)]">
+                        SCD Type 2 : Nouvelle Ligne (Recommandé)
+                    </button>
+                    <button onclick="setScdType(3)" id="scd-btn-3" class="px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition bg-slate-900 border-slate-700 text-slate-300 hover:border-indigo-400">
+                        SCD Type 3 : Nouvelle Colonne
+                    </button>
+                </div>
+
+                <!-- Interactive Timeline Toggle -->
+                <div class="flex items-center gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+                    <span class="text-xs font-mono text-slate-400 px-2">Chronologie :</span>
+                    <button onclick="setScdTimeline('before')" id="scd-time-before" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800">Avant Déménagement (2024)</button>
+                    <button onclick="setScdTimeline('after')" id="scd-time-after" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">Après Déménagement (15 Juin 2026)</button>
+                </div>
+            </div>
+
+            <!-- Main SCD Table Display matching screenshot 9 -->
+            <div class="glass-card rounded-3xl p-6 sm:p-8 border border-slate-800 space-y-6 shadow-2xl">
+                <div>
+                    <h3 id="scd-title" class="text-xl sm:text-2xl font-bold text-emerald-400">
+                        SCD Type 2 : Création de Ligne d'Historique (Standard Kimball)
+                    </h3>
+                    <p id="scd-subtitle" class="text-sm text-slate-300 mt-1">
+                        On clôture l'ancienne ligne et on en insère une nouvelle avec une nouvelle Surrogate Key. L'analyse historique reste 100% exacte.
+                    </p>
+                </div>
+
+                <!-- Dimension Table -->
+                <div>
+                    <div class="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">État de la Table de Dimension : <code class="text-sky-400">DIM_PATIENT</code></div>
+                    <div class="overflow-x-auto rounded-2xl border border-slate-800">
+                        <table class="w-full text-left border-collapse font-mono text-xs sm:text-sm" id="scd-table">
+                            <!-- Populated dynamically by renderScdView() -->
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Impact on Fact Table & BI Report -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+                    <div class="bg-slate-950/80 rounded-2xl p-5 border border-slate-800">
+                        <div class="text-xs font-mono uppercase text-sky-400 font-semibold mb-3">🔗 Liaison avec FACT_VISITES_MEDICALES</div>
+                        <div id="scd-fact-impact" class="space-y-2 text-xs font-mono">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/80 rounded-2xl p-5 border border-slate-800">
+                        <div class="text-xs font-mono uppercase text-amber-400 font-semibold mb-3">📊 Impact sur le Rapport Financier Régional (Audit Ministère)</div>
+                        <div id="scd-audit-impact" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFESSOR PEDAGOGICAL EXPLANATION BOX -->
+            <div class="prof-notes-panel glass-card rounded-2xl p-6 border-l-4 border-l-amber-400 bg-amber-950/10">
+                <div class="flex items-center gap-2 text-amber-300 font-bold text-sm uppercase tracking-wider mb-2">
+                    <span>🎓 Synthèse Pédagogique : Pourquoi le SCD Type 2 est Roi en BI ?</span>
+                </div>
+                <p class="text-sm text-slate-300 leading-relaxed">
+                    Faites remarquer aux étudiants le rôle magique de la <strong>Clé de Substitution (Surrogate Key)</strong> dans le SCD Type 2 : le patient a toujours le même matricule métier <code>P-889</code>, mais il possède deux identifiants techniques successifs dans l'entrepôt : <code>patient_key = 4021</code> (quand il habitait à Rabat) et <code>patient_key = 4099</code> (depuis qu'il habite à Casablanca). Ainsi, toutes ses visites médicales de 2024 restent liées à <code>4021</code> (Rabat) et ses visites à partir de juin 2026 sont liées à <code>4099</code> (Casablanca) sans aucune requête complexe de jointure sur les dates !
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER WITH KEYBOARD SHORTCUTS & SUMMARY -->
+    <footer class="border-t border-slate-800/80 bg-slate-950/80 px-6 py-4 mt-12">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
+            <div class="flex items-center gap-4">
+                <span>⌨️ <strong>Raccourcis Clavier :</strong> Flèches <kbd class="px-2 py-0.5 bg-slate-800 text-slate-200 rounded border border-slate-700">←</kbd> <kbd class="px-2 py-0.5 bg-slate-800 text-slate-200 rounded border border-slate-700">→</kbd> pour changer de diapositive</span>
+                <span class="hidden sm:inline">•</span>
+                <span class="hidden sm:inline">Touche <kbd class="px-2 py-0.5 bg-slate-800 text-slate-200 rounded border border-slate-700">N</kbd> pour afficher/masquer les notes professeur</span>
+            </div>
+            <div class="font-mono text-slate-400">
+                Système Hospitalier Décisionnel • Architecture Kimball & Inmon
+            </div>
+        </div>
+    </footer>
+
+    <!-- =========================================================================
+         JAVASCRIPT ENGINE FOR INTERACTIVITY, SIMULATIONS & SLIDE NAVIGATION
+         ========================================================================= -->
+    <script>
+        // 1. SLIDE NAVIGATION STATE
+        const slidesMeta = [
+            { id: 0, code: "01", title: "OLTP vs OLAP" },
+            { id: 1, code: "01B", title: "Simulateur Verrous" },
+            { id: 2, code: "02", title: "4 Piliers Inmon" },
+            { id: 3, code: "03", title: "4 Étapes Kimball" },
+            { id: 4, code: "04", title: "Schéma en Étoile" },
+            { id: 5, code: "05", title: "Constructeur SQL" },
+            { id: 6, code: "06", title: "Cube OLAP 3D" },
+            { id: 7, code: "07", title: "Pipeline & Médaillon" },
+            { id: 8, code: "08", title: "Historique SCD" }
+        ];
+
+        let currentSlide = 0;
+        let showProfNotes = true;
+
+        function initNavigation() {
+            const container = document.getElementById('nav-pills-container');
+            container.innerHTML = slidesMeta.map((s, idx) => `
+                <button onclick="goToSlide(${idx})" id="nav-pill-${idx}" class="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${idx === 0 ? 'bg-sky-500 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}">
+                    <span class="font-mono text-[10px] opacity-75">${s.code}</span> ${s.title}
+                </button>
+            `).join('');
+            updateSlideUI();
+        }
+
+        function goToSlide(index) {
+            if (index < 0 || index >= slidesMeta.length) return;
+            document.getElementById(`slide-${currentSlide}`).classList.add('hidden');
+            currentSlide = index;
+            const target = document.getElementById(`slide-${currentSlide}`);
+            target.classList.remove('hidden');
+            target.classList.remove('slide-enter');
+            void target.offsetWidth; // trigger reflow
+            target.classList.add('slide-enter');
+            updateSlideUI();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function nextSlide() {
+            if (currentSlide < slidesMeta.length - 1) goToSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) goToSlide(currentSlide - 1);
+        }
+
+        function updateSlideUI() {
+            document.getElementById('slide-counter').textContent = `${currentSlide + 1} / ${slidesMeta.length}`;
+            document.getElementById('btn-prev').disabled = (currentSlide === 0);
+            document.getElementById('btn-next').disabled = (currentSlide === slidesMeta.length - 1);
+            const pct = ((currentSlide + 1) / slidesMeta.length) * 100;
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+
+            slidesMeta.forEach((_, idx) => {
+                const pill = document.getElementById(`nav-pill-${idx}`);
+                if (!pill) return;
+                if (idx === currentSlide) {
+                    pill.className = "px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-sky-400 text-slate-950 shadow";
+                } else {
+                    pill.className = "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-400 hover:text-white hover:bg-slate-800";
+                }
+            });
+        }
+
+        function toggleProfNotes() {
+            showProfNotes = !showProfNotes;
+            const panels = document.querySelectorAll('.prof-notes-panel');
+            panels.forEach(p => {
+                if (showProfNotes) p.classList.remove('hidden');
+                else p.classList.add('hidden');
+            });
+            const label = document.getElementById('prof-notes-label');
+            const btn = document.getElementById('prof-notes-btn');
+            if (showProfNotes) {
+                label.textContent = "Explications Étudiants (ON)";
+                btn.className = "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 transition-all";
+            } else {
+                label.textContent = "Explications Étudiants (OFF)";
+                btn.className = "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 text-slate-400 border border-slate-700 transition-all";
+            }
+        }
+
+        // Keyboard navigation
+        window.addEventListener('keydown', (e) => {
+            if (['SELECT', 'INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'n' || e.key === 'N') toggleProfNotes();
+        });
+
+        // 2. PAGE 1 : OLTP VS OLAP ANIMATION MODE
+        function setOltpAnimMode(mode) {
+            const warningBox = document.getElementById('conflict-warning-box');
+            const btnBoth = document.getElementById('anim-btn-both');
+            const btnConflict = document.getElementById('anim-btn-conflict');
+
+            if (mode === 'conflict') {
+                warningBox.classList.remove('hidden');
+                btnConflict.className = "px-3 py-1 rounded-lg text-xs font-bold bg-rose-500 text-white border border-rose-400";
+                btnBoth.className = "px-3 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700";
+            } else {
+                warningBox.classList.add('hidden');
+                btnBoth.className = "px-3 py-1 rounded-lg text-xs font-medium bg-sky-500/20 text-sky-300 border border-sky-500/40";
+                btnConflict.className = "px-3 py-1 rounded-lg text-xs font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25";
+            }
+        }
+
+        // 3. PAGE 2 : SIMULATEUR DE VERROUS & CONTENTION SYSTÈME
+        function triggerOltpCrisis() {
+            const card = document.getElementById('oltp-server-card');
+            const led = document.getElementById('oltp-led');
+            const throughput = document.getElementById('oltp-throughput');
+            const latency = document.getElementById('oltp-latency');
+            const cpuPct = document.getElementById('oltp-cpu-pct');
+            const cpuBar = document.getElementById('oltp-cpu-bar');
+            const alertBox = document.getElementById('oltp-alert-box');
+            const queueVisual = document.getElementById('oltp-queue-visual');
+            const lockLabel = document.getElementById('lock-mode-label');
+            const statusBadge = document.getElementById('sim-status-badge');
+
+            card.className = "bg-slate-950/90 rounded-2xl p-6 border-2 border-rose-500/80 shadow-[0_0_35px_rgba(244,63,94,0.25)] transition-all duration-500 flex flex-col justify-between";
+            led.className = "w-3.5 h-3.5 rounded-full bg-rose-500 shadow-[0_0_15px_#f43f5e] animate-ping";
+
+            throughput.textContent = "12 req/s (CHUTE)";
+            throughput.className = "text-xs font-mono font-bold text-rose-400 mb-1";
+
+            latency.textContent = "14,800 ms (BLOCAGE)";
+            latency.className = "text-2xl sm:text-3xl font-extrabold text-rose-500 tracking-tight animate-pulse";
+
+            cpuPct.textContent = "100%";
+            cpuPct.className = "text-xs font-mono font-bold text-rose-400 mb-1";
+            cpuBar.style.width = "100%";
+            cpuBar.className = "bg-rose-500 h-full transition-all duration-500";
+
+            lockLabel.textContent = "Verrous: S-LOCK TABLE ENTIÈRE !";
+            lockLabel.className = "text-rose-400 font-bold";
+
+            queueVisual.innerHTML = `
+                <span class="px-2.5 py-1 rounded bg-rose-500/20 border border-rose-500 text-rose-300 font-mono text-xs">🔒 S-LOCK (Scan Analytique 3 ans)</span>
+                <span class="px-2.5 py-1 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 font-mono text-xs animate-pulse">⏳ X-Lock Attente (Urgence #904)</span>
+                <span class="px-2.5 py-1 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 font-mono text-xs animate-pulse">⏳ X-Lock Attente (Urgence #905)</span>
+            `;
+
+            alertBox.className = "rounded-xl p-4 bg-rose-950/80 border border-rose-500/80 text-rose-300 text-xs sm:text-sm text-center font-bold transition-all duration-300";
+            alertBox.innerHTML = "⚠️ ALERTE : Verrous S-Locks massifs posés ! Blocage des admissions d'urgences (X-Locks en attente) !";
+
+            statusBadge.className = "px-4 py-2 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-mono flex items-center gap-2";
+            statusBadge.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span><span>CRISE OLTP : Contention S-Locks / X-Locks active !</span>`;
+        }
+
+        function resetOltpSimulator() {
+            const card = document.getElementById('oltp-server-card');
+            const led = document.getElementById('oltp-led');
+            const throughput = document.getElementById('oltp-throughput');
+            const latency = document.getElementById('oltp-latency');
+            const cpuPct = document.getElementById('oltp-cpu-pct');
+            const cpuBar = document.getElementById('oltp-cpu-bar');
+            const alertBox = document.getElementById('oltp-alert-box');
+            const queueVisual = document.getElementById('oltp-queue-visual');
+            const lockLabel = document.getElementById('lock-mode-label');
+            const statusBadge = document.getElementById('sim-status-badge');
+
+            card.className = "bg-slate-950/90 rounded-2xl p-6 border-2 border-slate-800 transition-all duration-500 flex flex-col justify-between";
+            led.className = "w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399]";
+
+            throughput.textContent = "245 req/s (NOMINAL)";
+            throughput.className = "text-xs font-mono font-semibold text-emerald-400 mb-1";
+
+            latency.textContent = "3.2 ms (FLUIDE)";
+            latency.className = "text-2xl sm:text-3xl font-extrabold text-white tracking-tight";
+
+            cpuPct.textContent = "18%";
+            cpuPct.className = "text-xs font-mono font-semibold text-emerald-400 mb-1";
+            cpuBar.style.width = "18%";
+            cpuBar.className = "bg-emerald-400 h-full transition-all duration-500";
+
+            lockLabel.textContent = "Verrous: X-Locks brefs (OK)";
+            lockLabel.className = "text-emerald-400";
+
+            queueVisual.innerHTML = `
+                <span class="px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs">✅ INSERT Patient_401 (2ms)</span>
+                <span class="px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs">✅ UPDATE Lit_12 (1ms)</span>
+                <span class="px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs">✅ INSERT Patient_402 (3ms)</span>
+            `;
+
+            alertBox.className = "rounded-xl p-4 bg-slate-900/60 border border-slate-800 text-slate-400 text-xs sm:text-sm text-center font-medium transition-all duration-300";
+            alertBox.innerHTML = "✅ Aucune contention : Les infirmières enregistrent les urgences instantanément.";
+
+            statusBadge.className = "px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2";
+            statusBadge.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span><span>ÉTAT NOMINAL : Admissions fluides (3 ms)</span>`;
+        }
+
+        // 4. PAGE 3 : LES 4 PILIERS D'INMON INTERACTIVE DEMO
+        const inmonDemos = [
+            {
+                title: "🎯 Démonstration : Orienté Sujet (Subject-Oriented)",
+                desc: "Au lieu d'avoir une base par logiciel informatique (Silo Urgences, Silo Labo, Silo SAP), le Data Warehouse regroupe tout autour du sujet métier « VISITE MÉDICALE ».",
+                html: `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center text-xs font-mono mt-3">
+                        <div class="space-y-2 bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+                            <div class="text-slate-400 font-sans font-bold">Silos Applicatifs OLTP :</div>
+                            <div class="p-2 bg-rose-500/10 border border-rose-500/30 rounded text-rose-300">App_Urgences_DB (MySQL)</div>
+                            <div class="p-2 bg-amber-500/10 border border-amber-500/30 rounded text-amber-300">App_Cardio_DB (Oracle)</div>
+                            <div class="p-2 bg-indigo-500/10 border border-indigo-500/30 rounded text-indigo-300">SAP_Facturation (HANA)</div>
+                        </div>
+                        <div class="text-center text-sky-400 font-bold text-sm">
+                            ═══ Convergence ETL ═══▶
+                        </div>
+                        <div class="bg-sky-950/40 p-4 rounded-xl border border-sky-500/40 text-center">
+                            <div class="text-sky-300 font-bold text-sm mb-1">Sujet : PATIENT & SOIN</div>
+                            <div class="text-slate-300 font-sans text-xs">Vision 360° unifiée du parcours patient à travers tout le CHU.</div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                title: "🔗 Démonstration : Intégré (Harmonisation Sémantique ETL)",
+                desc: "Regardez comment trois services hospitaliers codent le genre et les dates différemment, et comment l'entrepôt les standardise :",
+                html: `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center text-xs font-mono mt-3">
+                        <div class="space-y-1.5 bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+                            <div class="text-rose-400">Urgences : Sexe = 'H' | Date = '15/06/2026'</div>
+                            <div class="text-amber-400">Maternité : Sexe = '1' | Date = '2026-06-15'</div>
+                            <div class="text-indigo-400">Radiologie : Sexe = 'Masc' | Date = '06-15-26'</div>
+                        </div>
+                        <div class="text-center text-emerald-400 font-bold">
+                            ═══ Règles de Mapping ═══▶
+                        </div>
+                        <div class="bg-emerald-950/40 p-4 rounded-xl border border-emerald-500/40">
+                            <div class="text-emerald-300 font-bold mb-1">Standard Unique Entrepôt :</div>
+                            <div class="text-white">genre = 'M' (ISO)</div>
+                            <div class="text-white">date_key = 20260615 (INT)</div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                title: "🔒 Démonstration : Non-Volatil (Write Once, Read Many)",
+                desc: "Contrairement à la base OLTP où un UPDATE écrase l'ancienne valeur, le Data Warehouse fonctionne en mode ajout uniquement (Append-Only).",
+                html: `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono mt-3">
+                        <div class="bg-rose-950/30 p-4 rounded-xl border border-rose-500/30">
+                            <div class="text-rose-300 font-bold mb-1">❌ Base OLTP (Volatile) :</div>
+                            <div class="text-slate-300">UPDATE patients SET ville='Casablanca' WHERE id=889;</div>
+                            <div class="text-rose-400 mt-1">➔ L'information "Rabat" a disparu à jamais !</div>
+                        </div>
+                        <div class="bg-emerald-950/30 p-4 rounded-xl border border-emerald-500/30">
+                            <div class="text-emerald-300 font-bold mb-1">✅ Data Warehouse (Non-Volatil) :</div>
+                            <div class="text-slate-300">INSERT INTO dim_patient ... (Nouvelle version horodatée)</div>
+                            <div class="text-emerald-400 mt-1">➔ Aucun DELETE ni écrasement destructif : auditabilité garantie.</div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                title: "⏳ Démonstration : Historisé (Time-Variant)",
+                desc: "En OLTP, la base répond à « Quel est l'état maintenant ? ». En OLAP, chaque ligne possède une clé temporelle explicite.",
+                html: `
+                    <div class="flex flex-wrap items-center justify-around gap-3 bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs font-mono mt-3">
+                        <div class="p-3 rounded-lg bg-slate-950 border border-slate-700 text-center">
+                            <div class="text-slate-400">Hiver 2024</div>
+                            <div class="text-lg font-bold text-sky-400">14 200 Visites</div>
+                        </div>
+                        <div class="text-slate-500">➔</div>
+                        <div class="p-3 rounded-lg bg-slate-950 border border-slate-700 text-center">
+                            <div class="text-slate-400">Hiver 2025</div>
+                            <div class="text-lg font-bold text-sky-400">16 850 Visites (+18%)</div>
+                        </div>
+                        <div class="text-slate-500">➔</div>
+                        <div class="p-3 rounded-lg bg-slate-950 border border-sky-500/50 text-center">
+                            <div class="text-sky-300">Hiver 2026</div>
+                            <div class="text-lg font-bold text-emerald-400">19 100 Visites (+13%)</div>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+
+        function selectInmonPillar(idx) {
+            for (let i = 0; i < 4; i++) {
+                const c = document.getElementById(`pillar-card-${i}`);
+                if (i === idx) c.classList.add('ring-2', 'ring-sky-400');
+                else c.classList.remove('ring-2', 'ring-sky-400');
+            }
+            const box = document.getElementById('inmon-interactive-demo');
+            const d = inmonDemos[idx];
+            box.innerHTML = `
+                <h4 class="text-base font-bold text-sky-400 mb-1">${d.title}</h4>
+                <p class="text-xs sm:text-sm text-slate-300">${d.desc}</p>
+                ${d.html}
+            `;
+        }
+
+        // 5. PAGE 4 : KIMBALL 4 STEPS INTERACTIVE INSPECTOR
+        const kimballStepDetails = {
+            1: {
+                badge: "ÉTAPE 1 • PROCESSUS MÉTIER",
+                title: "Pourquoi choisir un événement physique et non un département ?",
+                body: `
+                    <p class="text-sm text-slate-300 leading-relaxed mb-4">
+                        Une erreur classique des débutants est de créer un modèle pour le « Département Comptabilité » ou « La Direction Médicale ». Ralph Kimball insiste : il faut modéliser un <strong>processus métier transversal</strong> (ex: <em>Admettre un patient</em>, <em>Facturer un soin</em>, <em>Prescrire un médicament</em>).
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+                        <div class="text-emerald-400 font-bold">✅ Bon choix de processus :</div>
+                        <div class="text-slate-300">« Consultation Médicale » (génère des milliers d'événements mesurables chaque jour).</div>
+                        <div class="text-rose-400 font-bold pt-2">❌ Mauvais choix :</div>
+                        <div class="text-slate-300">« Le Service Informatique » (c'est une structure organisationnelle, pas un événement).</div>
+                    </div>
+                `
+            },
+            2: {
+                badge: "ÉTAPE 2 • LE GRAIN ATOMIQUE",
+                title: "Pourquoi toujours choisir le Grain le plus fin possible ?",
+                body: `
+                    <p class="text-sm text-slate-300 leading-relaxed mb-4">
+                        Si vous stockez dans votre table de faits un grain résumé <em>« Total des visites par mois et par médecin »</em>, vous ne pourrez <strong>jamais</strong> répondre à la question : <em>« Y a-t-il plus d'urgences le dimanche soir ? »</em> ou <em>« Quel est l'âge moyen des patients ? »</em>.
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded-xl border border-purple-500/30 space-y-2 text-xs font-mono">
+                        <div class="text-purple-300 font-bold">🔬 Règle de Kimball :</div>
+                        <div class="text-slate-200">Avec le grain atomique (1 ligne = 1 visite individuelle), on peut toujours additionner vers le haut (Roll-up), mais on ne peut jamais diviser un agrégat vers le bas !</div>
+                    </div>
+                `
+            },
+            3: {
+                badge: "ÉTAPE 3 • LES DIMENSIONS",
+                title: "Les Dimensions : L'âme descriptive du Data Warehouse",
+                body: `
+                    <p class="text-sm text-slate-300 leading-relaxed mb-4">
+                        Les tables de dimensions contiennent du texte riche (libellés, catégories, hiérarchies géographiques). Ce sont elles qui fournissent les filtres (<code>WHERE</code>) et les axes de regroupement (<code>GROUP BY</code>) dans les rapports.
+                    </p>
+                    <ul class="space-y-2 text-xs font-mono bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <li class="text-sky-300">🕒 <strong>QUAND ?</strong> ➔ DIM_TEMPS (Jour, Mois, Trimestre, Férié)</li>
+                        <li class="text-pink-300">👤 <strong>QUI ?</strong> ➔ DIM_PATIENT (Tranche d'âge, Genre, Ville)</li>
+                        <li class="text-amber-300">👨‍⚕️ <strong>PAR QUI ?</strong> ➔ DIM_PRATICIEN (Spécialité, Statut)</li>
+                    </ul>
+                `
+            },
+            4: {
+                badge: "ÉTAPE 4 • LES FAITS NUMÉRIQUES",
+                title: "Les Mesures Additivité & Le Compteur Technique (Factless Counter)",
+                body: `
+                    <p class="text-sm text-slate-300 leading-relaxed mb-4">
+                        Chaque mesure de la table de faits doit être purement numérique et évaluée au grain de l'étape 2.
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded-xl border border-emerald-500/30 space-y-2 text-xs">
+                        <div class="font-mono text-emerald-400 font-bold">Astuce d'Architecte : nb_visites = 1</div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Ajouter une colonne constante <code>nb_visites = 1</code> sur chaque ligne permet aux analystes de faire un simple <code>SUM(nb_visites)</code> ultra-rapide au lieu d'un <code>COUNT(*)</code> et facilite les calculs de ratios dans les outils BI.
+                        </p>
+                    </div>
+                `
+            }
+        };
+
+        function selectKimballStep(step) {
+            for (let i = 1; i <= 4; i++) {
+                const card = document.getElementById(`kimball-step-${i}`);
+                if (i === step) card.classList.replace('border-slate-800', 'border-sky-500/60');
+                else card.classList.replace('border-sky-500/60', 'border-slate-800');
+            }
+            const d = kimballStepDetails[step];
+            document.getElementById('kimball-inspector-content').innerHTML = `
+                <span class="inline-block px-3 py-1 rounded-full text-[11px] font-mono bg-sky-500/15 text-sky-400 border border-sky-500/30 mb-3">${d.badge}</span>
+                <h4 class="text-xl font-bold text-white mb-3">${d.title}</h4>
+                ${d.body}
+            `;
+        }
+
+        // 6. PAGE 5 : STAR SCHEMA INTERACTIVE INSPECTOR
+        const starTablesData = {
+            'FACT_VISITES': {
+                badge: "Table de Faits Centrale",
+                title: "FACT_VISITES_MEDICALES",
+                desc: "Cœur numérique du Data Warehouse. Stocke chaque acte médical dispensé sous un grain atomique non agrégé (millions de lignes, très étroite en octets).",
+                props: [
+                    "✅ <strong>Additivité 100% :</strong> Les durées et les frais peuvent être sommés sur toutes les dimensions.",
+                    "✅ <strong>Clés de substitution (Surrogate Keys) :</strong> Entiers de 4 à 8 octets garantissant des jointures éclair sans dépendre des matricules administratifs.",
+                    "✅ <strong>Compteur unitaire :</strong> Permet les calculs de moyennes pondérées sans COUNT(DISTINCT)."
+                ],
+                rows: [
+                    { name: "duree_intervention_min", type: "Minutes (INT)", add: "Additive", color: "text-emerald-400" },
+                    { name: "frais_consultation", type: "MAD (DECIMAL)", add: "Additive", color: "text-emerald-400" },
+                    { name: "duree_moyenne_acte", type: "Ratio Calculé", add: "Non-additive", color: "text-rose-400" }
+                ]
+            },
+            'DIM_TEMPS': {
+                badge: "Table de Dimension Temporelle",
+                title: "DIM_TEMPS (Calendrier Perpétuel)",
+                desc: "Table pré-générée (1 ligne par jour sur 20 ans = ~7 300 lignes). Évite d'utiliser des fonctions SQL coûteuses comme EXTRACT(MONTH FROM date) pendant les requêtes.",
+                props: [
+                    "✅ <strong>Clé Intelligente (Smart Key) :</strong> Seule exception autorisée par Kimball sous forme d'entier YYYYMMDD (ex: 20260615).",
+                    "✅ <strong>Attributs Calendaires :</strong> Permet de filtrer sur les jours fériés marocains, week-ends, saisons épidémiques (Hiver/Été)."
+                ],
+                rows: [
+                    { name: "date_key", type: "PK (INT 20260615)", add: "Clé Surrogate", color: "text-rose-400" },
+                    { name: "mois_nom / trimestre", type: "VARCHAR (Q2 2026)", add: "Hiérarchie", color: "text-sky-400" },
+                    { name: "est_jour_ferie", type: "BOOLEAN", add: "Filtre Métier", color: "text-amber-300" }
+                ]
+            },
+            'DIM_PATIENT': {
+                badge: "Table de Dimension Descriptive",
+                title: "DIM_PATIENT (Profil Démographique)",
+                desc: "Regroupe toutes les caractéristiques sociodémographiques et géographiques du patient au moment du soin.",
+                props: [
+                    "✅ <strong>Anonymisation RGPD / Loi 09-08 :</strong> Aucun nom ni CIN n'est nécessaire pour les statistiques médicales.",
+                    "✅ <strong>Discrétisation :</strong> L'âge exact est accompagné d'une colonne tranche_age ('0-17', '18-59', '60+') prête pour les graphiques."
+                ],
+                rows: [
+                    { name: "patient_key", type: "PK Surrogate (INT)", add: "Clé Technique", color: "text-rose-400" },
+                    { name: "tranche_age", type: "VARCHAR ('Senior 60+')", add: "Axe Analyse", color: "text-sky-400" },
+                    { name: "ville_provenance", type: "VARCHAR ('Rabat')", add: "SCD Type 2", color: "text-emerald-400" }
+                ]
+            },
+            'DIM_PRATICIEN': {
+                badge: "Table de Dimension Métier",
+                title: "DIM_PRATICIEN (Corps Médical)",
+                desc: "Décrit le personnel soignant ayant réalisé l'acte médical ainsi que son service hospitalier de rattachement.",
+                props: [
+                    "✅ <strong>Dénormalisation :</strong> Le nom du service et de la spécialité sont directement inclus dans la table praticien (pas de sous-table normalisée).",
+                    "✅ <strong>Analyse RH :</strong> Permet de croiser la rentabilité par statut (Professeur, Résident, Vacataire)."
+                ],
+                rows: [
+                    { name: "praticien_key", type: "PK Surrogate (INT)", add: "Clé Technique", color: "text-rose-400" },
+                    { name: "specialite_medicale", type: "VARCHAR ('Cardiologie')", add: "Axe Analyse", color: "text-sky-400" },
+                    { name: "statut_intervenant", type: "VARCHAR ('Titulaire')", add: "Attribut RH", color: "text-amber-300" }
+                ]
+            }
+        };
+
+        function inspectStarTable(key) {
+            const d = starTablesData[key];
+            const panel = document.getElementById('star-inspector-panel');
+            panel.innerHTML = `
+                <div>
+                    <span class="inline-block px-3 py-1 rounded-md text-xs font-mono bg-sky-500/15 text-sky-400 border border-sky-500/30 mb-3">
+                        ${d.badge}
+                    </span>
+                    <h3 class="text-2xl font-extrabold text-white mb-2">${d.title}</h3>
+                    <p class="text-xs sm:text-sm text-slate-400 leading-relaxed mb-5">${d.desc}</p>
+
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-200 mb-3">Propriétés Mathématiques & Conceptuelles :</h4>
+                    <ul class="space-y-2.5 text-xs sm:text-sm text-slate-300 mb-6">
+                        ${d.props.map(p => `<li>${p}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="bg-slate-950/90 rounded-xl border border-slate-800 overflow-hidden">
+                    <table class="w-full text-left text-xs font-mono">
+                        <thead>
+                            <tr class="bg-slate-900 text-sky-400 border-b border-slate-800">
+                                <th class="py-2.5 px-3">Champ / Mesure</th>
+                                <th class="py-2.5 px-3">Type</th>
+                                <th class="py-2.5 px-3">Propriété</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/70">
+                            ${d.rows.map(r => `
+                                <tr>
+                                    <td class="py-2.5 px-3 text-slate-200">${r.name}</td>
+                                    <td class="py-2.5 px-3 text-slate-400">${r.type}</td>
+                                    <td class="py-2.5 px-3 font-semibold ${r.color}">${r.add}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // 7. PAGE 6 : LIVE SQL BUILDER & QUERY ENGINE
+        const sqlDataset = {
+            specialite: ["Cardiologie", "Cardiologie", "Neurologie", "Pédiatrie", "Médecine Générale", "Urgences"],
+            statut: ["Professeur Agrégé", "Médecin Résident", "Spécialiste Titulaire", "Spécialiste Titulaire", "Médecin Interne", "Urgentiste Chef"],
+            anciennete: ["Senior (> 15 ans)", "Confirmé (5-15 ans)", "Senior (> 15 ans)", "Confirmé (5-15 ans)", "Junior (< 5 ans)", "Confirmé (5-15 ans)"],
+            tranche_age: ["Senior (60+)", "Adulte (18-59)", "Senior (60+)", "Pédiatrique (0-17)", "Adulte (18-59)", "Toutes tranches"],
+            ville: ["Casablanca", "Rabat", "Rabat", "Fès", "Tanger", "Oujda"],
+            trimestre: ["2026 - T1", "2026 - T2", "2026 - T1", "2025 - T4", "2026 - T2", "2026 - T1"],
+            ca: [485000, 320000, 410000, 290000, 360000, 640000],
+            duree: [1420, 980, 1650, 890, 1210, 2450],
+            volume: [1210, 850, 920, 1450, 1800, 3200]
+        };
+
+        function updateLiveSqlBuilder() {
+            const axe1 = document.getElementById('sql-axe1').value;
+            const axe2 = document.getElementById('sql-axe2').value;
+            const kpi = document.getElementById('sql-kpi').value;
+
+            const axe1Map = {
+                specialite: { sql: "p.specialite", label: "Spécialité" },
+                statut: { sql: "p.statut_intervenant", label: "Statut Praticien" },
+                anciennete: { sql: "p.tranche_anciennete", label: "Ancienneté" }
+            };
+            const axe2Map = {
+                tranche_age: { sql: "pa.tranche_age", label: "Tranche d'Âge" },
+                ville: { sql: "pa.ville_provenance", label: "Ville Patient" },
+                trimestre: { sql: "t.trimestre", label: "Trimestre" }
+            };
+            const kpiMap = {
+                ca: { sql: "SUM(f.frais_consultation)", unit: "MAD", label: "Chiffre d'Affaires" },
+                duree: { sql: "SUM(f.duree_intervention_min) / 60", unit: "Heures", label: "Heures d'Intervention" },
+                volume: { sql: "SUM(f.nb_visites)", unit: "Visites", label: "Volume Consultations" }
+            };
+
+            const a1 = axe1Map[axe1];
+            const a2 = axe2Map[axe2];
+            const kp = kpiMap[kpi];
+
+            document.getElementById('sql-code-display').innerHTML = `
+                <span class="text-amber-400 font-bold">SELECT</span> ${a1.sql}, ${a2.sql}, <span class="text-emerald-400 font-bold">${kp.sql}</span> <span class="text-amber-400 font-bold">AS</span> kpi_resultat, <span class="text-emerald-400 font-bold">COUNT</span>(f.visite_id) <span class="text-amber-400 font-bold">AS</span> volume_consultations
+                <span class="text-amber-400 font-bold">FROM</span> fact_visites_medicales f
+                <span class="text-amber-400 font-bold">JOIN</span> dim_praticien p <span class="text-amber-400 font-bold">ON</span> f.praticien_key = p.praticien_key
+                <span class="text-amber-400 font-bold">JOIN</span> dim_patient pa <span class="text-amber-400 font-bold">ON</span> f.patient_key = pa.patient_key
+                <span class="text-amber-400 font-bold">JOIN</span> dim_temps t <span class="text-amber-400 font-bold">ON</span> f.date_key = t.date_key
+                <span class="text-amber-400 font-bold">GROUP BY</span> ${a1.sql}, ${a2.sql}
+                <span class="text-amber-400 font-bold">ORDER BY</span> kpi_resultat <span class="text-amber-400 font-bold">DESC</span>;
+            `;
+
+            document.getElementById('th-col1').textContent = a1.label;
+            document.getElementById('th-col2').textContent = a2.label;
+            document.getElementById('th-col3').textContent = kp.label;
+
+            const vals = sqlDataset[kpi];
+            const maxVal = Math.max(...vals);
+
+            const tbody = document.getElementById('sql-results-tbody');
+            tbody.innerHTML = vals.map((v, i) => {
+                const widthPct = Math.round((v / maxVal) * 100);
+                const formatted = v.toLocaleString('fr-FR') + ' ' + kp.unit;
+                return `
+                    <tr class="hover:bg-slate-900/50 transition">
+                        <td class="py-3.5 px-5 font-bold text-white">${sqlDataset[axe1][i]}</td>
+                        <td class="py-3.5 px-5 text-slate-300">${sqlDataset[axe2][i]}</td>
+                        <td class="py-3.5 px-5 font-mono font-bold text-emerald-400">${formatted}</td>
+                        <td class="py-3.5 px-5">
+                            <div class="w-full bg-slate-800/80 h-2.5 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-sky-400 to-indigo-500 h-full rounded-full transition-all duration-500" style="width: ${widthPct}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 8. PAGE 7 : 3D ISOMETRIC OLAP CUBE VISUALIZER
+        const olapOpsData = {
+            slice: {
+                badge: "Mode : Slice (Coupe 2D)",
+                title: "Opération : Slice (Trancher une feuille 2D)",
+                desc: "Fixe une valeur unique sur UNE seule dimension (ex: Année = 2026) pour extraire une tranche bidimensionnelle du cube.",
+                sql: "WHERE t.annee = 2026;\n-- On observe toutes les spécialités et toutes les villes uniquement pour 2026",
+                hospital: "🏥 Usage Directeur : Extraire le tableau croisé (Spécialité × Ville) uniquement pour l'année 2026.",
+                axes: "Tranche fixée : Temps = 2026 | Axes libres : Spécialité (Y) × Région (Z)"
+            },
+            dice: {
+                badge: "Mode : Dice (Sous-Cube)",
+                title: "Opération : Dice (Découper en sous-cube)",
+                desc: "Applique des filtres simultanés sur au moins 2 dimensions pour extraire un sous-cube spécifique d'analyse.",
+                sql: "WHERE p.specialite IN ('Cardiologie', 'Neurologie')\n  AND pa.ville_provenance = 'Rabat'\n  AND t.annee = 2026;",
+                hospital: "🏥 Usage Directeur : Isoler uniquement la Cardiologie & Neurologie pour les patients de Rabat en 2026.",
+                axes: "Dimensions filtrées : Temps (X) × Spécialité (Y) × Patient/Région (Z)"
+            },
+            drilldown: {
+                badge: "Mode : Drill-Down (Zoom +)",
+                title: "Opération : Drill-Down (Forer dans le détail)",
+                desc: "Descend d'un niveau dans la hiérarchie d'une dimension pour augmenter la finesse d'observation (Année ➔ Trimestre ➔ Mois).",
+                sql: "SELECT t.annee, t.trimestre, t.mois, SUM(f.frais_consultation)\nFROM fact_visites_medicales f JOIN dim_temps t ...\nGROUP BY t.annee, t.trimestre, t.mois;",
+                hospital: "🏥 Usage Directeur : Passer du chiffre d'affaires annuel au détail mensuel puis journalier pour comprendre un pic épidémique.",
+                axes: "Hiérarchie Temps dépliée : Année ➔ Trimestre ➔ Mois (Cellules subdivisées)"
+            },
+            rollup: {
+                badge: "Mode : Roll-Up (Agrégation)",
+                title: "Opération : Roll-Up (Consolider vers le haut)",
+                desc: "Opération inverse du Drill-Down : remonte la hiérarchie en fusionnant les cellules (Ville ➔ Région ➔ Pays).",
+                sql: "SELECT pa.region, SUM(f.frais_consultation)\nFROM fact_visites_medicales f JOIN dim_patient pa ...\nGROUP BY pa.region;",
+                hospital: "🏥 Usage Directeur : Regrouper toutes les villes (Oujda, Berkane, Nador) au niveau de la Région de l'Oriental.",
+                axes: "Consolidation : Villes fusionnées en Régions Macroscopiques"
+            },
+            pivot: {
+                badge: "Mode : Pivot (Rotation 90°)",
+                title: "Opération : Pivot / Rotate (Pivoter les axes)",
+                desc: "Effectue une rotation géométrique du cube pour permuter les lignes et les colonnes du rapport sans modifier les chiffres.",
+                sql: "-- Permutation des axes de lecture dans le tableau croisé dynamique :\n-- Colonnes : Spécialités Médicales ↔ Lignes : Trimestres",
+                hospital: "🏥 Usage Directeur : Passer d'une vue par Médecin en ligne à une vue par Trimestre en ligne en un clic.",
+                axes: "Axes permutés : Spécialité (X) × Temps (Y) × Patient/Région (Z)"
+            }
+        };
+
+        function setOlapOperation(op) {
+            ['slice', 'dice', 'drilldown', 'rollup', 'pivot'].forEach(k => {
+                const btn = document.getElementById(`olap-btn-${k}`);
+                if (k === op) {
+                    btn.className = "px-4 py-3 rounded-xl text-xs sm:text-sm font-bold border transition flex items-center gap-2 bg-sky-400 text-slate-950 border-sky-300 shadow-lg shadow-sky-400/30";
+                } else {
+                    btn.className = "px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition flex items-center gap-2 bg-slate-900 border-slate-700 text-slate-200 hover:border-sky-400";
+                }
+            });
+
+            const d = olapOpsData[op];
+            document.getElementById('cube-mode-badge').textContent = d.badge;
+            document.getElementById('olap-op-title').textContent = d.title;
+            document.getElementById('olap-op-desc').textContent = d.desc;
+            document.getElementById('olap-op-sql').innerText = d.sql;
+            document.getElementById('olap-op-hospital-case').textContent = d.hospital;
+            document.getElementById('cube-axes-label').textContent = d.axes;
+
+            renderOlapCube(op);
+        }
+
+        function renderOlapCube(op) {
+            const svg = document.getElementById('olap-svg-cube');
+            const container = document.getElementById('olap-cube-container');
+            container.style.transform = (op === 'pivot') ? 'rotate(-14deg) scale(1.03)' : 'rotate(0deg) scale(1)';
+
+            // Base wireframe isometric cube coordinates
+            // Center (150, 130), Top (150, 30), Left (60, 80), Right (240, 80), BottomLeft (60, 180), BottomRight (240, 180), Bottom (150, 230)
+            let highlightLayer = '';
+
+            if (op === 'slice') {
+                // Highlight top slice plane strongly
+                highlightLayer = `
+                    <polygon points="150,30 240,80 150,130 60,80" fill="rgba(56,189,248,0.55)" stroke="#38bdf8" stroke-width="3"/>
+                    <polygon points="60,80 150,130 150,163 60,113" fill="rgba(56,189,248,0.4)" stroke="#38bdf8" stroke-width="2"/>
+                    <polygon points="240,80 150,130 150,163 240,113" fill="rgba(56,189,248,0.3)" stroke="#38bdf8" stroke-width="2"/>
+                `;
+            } else if (op === 'dice') {
+                // Sub-cube in the top-front corner
+                highlightLayer = `
+                    <polygon points="150,65 210,98 150,130 90,98" fill="rgba(56,189,248,0.65)" stroke="#38bdf8" stroke-width="2.5"/>
+                    <polygon points="90,98 150,130 150,185 90,152" fill="rgba(99,102,241,0.55)" stroke="#818cf8" stroke-width="2.5"/>
+                    <polygon points="210,98 150,130 150,185 210,152" fill="rgba(56,189,248,0.45)" stroke="#38bdf8" stroke-width="2.5"/>
+                `;
+            } else if (op === 'drilldown') {
+                // Dense fine grid lines
+                highlightLayer = `
+                    <polygon points="150,30 240,80 150,130 60,80" fill="rgba(52,211,153,0.28)" stroke="#34d399" stroke-width="2"/>
+                    <line x1="105" y1="55" x2="195" y2="105" stroke="#34d399" stroke-width="1.5"/>
+                    <line x1="195" y1="55" x2="105" y2="105" stroke="#34d399" stroke-width="1.5"/>
+                    <line x1="127" y1="42" x2="217" y2="92" stroke="#34d399" stroke-width="1"/>
+                    <line x1="82" y1="67" x2="172" y2="117" stroke="#34d399" stroke-width="1"/>
+                `;
+            } else if (op === 'rollup') {
+                // Solid unified macro block
+                highlightLayer = `
+                    <polygon points="150,30 240,80 150,130 60,80" fill="rgba(251,191,36,0.45)" stroke="#fbbf24" stroke-width="3"/>
+                    <polygon points="60,80 150,130 150,230 60,180" fill="rgba(251,191,36,0.3)" stroke="#fbbf24" stroke-width="3"/>
+                    <polygon points="240,80 150,130 150,230 240,180" fill="rgba(251,191,36,0.2)" stroke="#fbbf24" stroke-width="3"/>
+                `;
+            } else if (op === 'pivot') {
+                highlightLayer = `
+                    <polygon points="150,30 240,80 150,130 60,80" fill="rgba(168,85,247,0.45)" stroke="#c084fc" stroke-width="2.5"/>
+                    <polygon points="60,80 150,130 150,230 60,180" fill="rgba(56,189,248,0.35)" stroke="#38bdf8" stroke-width="2.5"/>
+                `;
+            }
+
+            svg.innerHTML = `
+                <!-- Back/Base Cube Faces -->
+                <polygon points="150,30 240,80 150,130 60,80" fill="rgba(99,102,241,0.18)" stroke="#6366f1" stroke-width="1.5"/>
+                <polygon points="60,80 150,130 150,230 60,180" fill="rgba(56,189,248,0.14)" stroke="#4f46e5" stroke-width="1.5"/>
+                <polygon points="240,80 150,130 150,230 240,180" fill="rgba(30,58,138,0.22)" stroke="#4f46e5" stroke-width="1.5"/>
+
+                <!-- Internal Grid Subdivisions (3x3x3) -->
+                <line x1="90" y1="63" x2="180" y2="113" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>
+                <line x1="120" y1="47" x2="210" y2="97" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>
+                <line x1="180" y1="47" x2="90" y2="97" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>
+                <line x1="210" y1="63" x2="120" y2="113" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>
+
+                <line x1="60" y1="113" x2="150" y2="163" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>
+                <line x1="60" y1="146" x2="150" y2="196" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>
+                <line x1="240" y1="113" x2="150" y2="163" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>
+                <line x1="240" y1="146" x2="150" y2="196" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>
+
+                <!-- Active Operation Highlight Overlay -->
+                ${highlightLayer}
+            `;
+        }
+
+        // 9. PAGE 8 : PIPELINE & MEDALLION INSPECTOR
+        const pipelineDetails = {
+            1: "🏥 <strong>Couche 1 (Sources Hétérogènes) :</strong> Les données naissent dans les services cliniques (HL7 FHIR, bases SQL urgences, fichiers Excel planning). Elles sont non structurées ou normalisées et ne doivent jamais être interrogées directement par les outils BI.",
+            2: "⚙️ <strong>Couche 2 (ETL / ELT) :</strong> C'est l'usine de purification. On extrait en horaires décalés (la nuit ou en CDC temps réel), on élimine les doublons patients, on convertit les devises en MAD et on remplace les matricules par des Surrogate Keys.",
+            3: "🏛️ <strong>Couche 3 (EDW & Data Marts) :</strong> L'Entrepôt Central (Enterprise Data Warehouse) stocke toute l'histoire de l'hôpital. Les Data Marts sont des sous-ensembles en étoile spécialisés par métier (ex: Data Mart Épidémiologie, Data Mart Finance).",
+            4: "🚀 <strong>Couche 4 (Moteur OLAP Colonnaire) :</strong> Stockage physique en colonnes (Parquet / Delta / BigQuery). Au lieu de lire toute la ligne, le moteur lit uniquement les colonnes présentes dans la requête et compresse les données répétitives (Run-Length Encoding).",
+            5: "📊 <strong>Couche 5 (Restitution BI & IA) :</strong> Les tableaux de bord Power BI, les alertes de saturation des lits d'urgences et les algorithmes de Machine Learning consomment la couche Gold en quelques millisecondes."
+        };
+
+        function inspectPipelineLayer(num) {
+            document.getElementById('pipeline-detail-banner').innerHTML = pipelineDetails[num];
+        }
+
+        function inspectMedallion(tier) {
+            const messages = {
+                bronze: "🥉 <strong>Zone Bronze (Landing / Raw) :</strong> Copie conforme exacte des extractions sources au format JSON/CSV/Parquet. Si un bug est découvert dans notre code de transformation 6 mois plus tard, on peut rejouer tout l'historique depuis Bronze sans solliciter l'hôpital.",
+                silver: "🥈 <strong>Zone Silver (Cleaned & Conformed) :</strong> Les types sont typés (DATE, DECIMAL), les valeurs nulles traitées, les codes M/F harmonisés et les tables jointes pour créer une source de vérité propre (Enterprise Conformed Layer).",
+                gold: "🥇 <strong>Zone Gold (Business Star Schema) :</strong> Modèle en étoile de Kimball (<code>FACT_VISITES_MEDICALES</code> + Dimensions) optimisé pour les directeurs d'hôpitaux et analystes Power BI."
+            };
+            document.getElementById('pipeline-detail-banner').innerHTML = messages[tier];
+        }
+
+        // 10. PAGE 9 : SLOWLY CHANGING DIMENSIONS (SCD TYPE 1, 2, 3)
+        let currentScdType = 2;
+        let currentScdTime = 'after';
+
+        function setScdType(type) {
+            currentScdType = type;
+            [1, 2, 3].forEach(t => {
+                const btn = document.getElementById(`scd-btn-${t}`);
+                if (t === type) {
+                    btn.className = "px-5 py-3 rounded-xl text-xs sm:text-sm font-bold border transition bg-indigo-500 text-white border-indigo-400 shadow-[0_0_25px_rgba(99,102,241,0.45)]";
+                } else {
+                    btn.className = "px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition bg-slate-900 border-slate-700 text-slate-300 hover:border-indigo-400";
+                }
+            });
+            renderScdView();
+        }
+
+        function setScdTimeline(timeMode) {
+            currentScdTime = timeMode;
+            const btnBefore = document.getElementById('scd-time-before');
+            const btnAfter = document.getElementById('scd-time-after');
+            if (timeMode === 'before') {
+                btnBefore.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/40";
+                btnAfter.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800";
+            } else {
+                btnAfter.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+                btnBefore.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800";
+            }
+            renderScdView();
+        }
+
+        function renderScdView() {
+            const title = document.getElementById('scd-title');
+            const subtitle = document.getElementById('scd-subtitle');
+            const table = document.getElementById('scd-table');
+            const factImpact = document.getElementById('scd-fact-impact');
+            const auditImpact = document.getElementById('scd-audit-impact');
+
+            if (currentScdTime === 'before') {
+                title.textContent = "État Initial (Janvier 2024 — Avant le déménagement)";
+                title.className = "text-xl sm:text-2xl font-bold text-sky-400";
+                subtitle.textContent = "Le patient P-889 réside à Rabat. Une seule ligne existe dans DIM_PATIENT.";
+                table.innerHTML = `
+                    <thead>
+                        <tr class="bg-slate-900 text-sky-400 border-b border-slate-800">
+                            <th class="py-3.5 px-4">patient_key</th>
+                            <th class="py-3.5 px-4">matricule_src</th>
+                            <th class="py-3.5 px-4">ville</th>
+                            <th class="py-3.5 px-4">date_debut</th>
+                            <th class="py-3.5 px-4">date_fin</th>
+                            <th class="py-3.5 px-4">est_actif</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bg-emerald-950/30 text-emerald-300">
+                            <td class="py-3.5 px-4 font-bold">4021</td>
+                            <td class="py-3.5 px-4">P-889</td>
+                            <td class="py-3.5 px-4 font-bold">Rabat</td>
+                            <td class="py-3.5 px-4">2024-01-01</td>
+                            <td class="py-3.5 px-4">9999-12-31</td>
+                            <td class="py-3.5 px-4 font-bold">TRUE</td>
+                        </tr>
+                    </tbody>
+                `;
+                factImpact.innerHTML = `<div class="p-2.5 bg-slate-900 rounded border border-slate-800 text-slate-300">Visite du 10/03/2024 (500 MAD) ➔ liée à <strong class="text-sky-400">patient_key = 4021 (Rabat)</strong></div>`;
+                auditImpact.innerHTML = `En 2024, les 500 MAD de soins sont correctement comptabilisés pour la ville de <strong>Rabat</strong>. Cliquez sur <em>« Après Déménagement (15 Juin 2026) »</em> pour voir l'effet du changement d'adresse.`;
+                return;
+            }
+
+            // AFTER MOVE (15 June 2026)
+            if (currentScdType === 1) {
+                title.textContent = "SCD Type 1 : Écrasement Direct (Perte de l'Historique !)";
+                title.className = "text-xl sm:text-2xl font-bold text-rose-400";
+                subtitle.textContent = "Un simple UPDATE remplace 'Rabat' par 'Casablanca' sur la clé 4021. Toute trace de Rabat disparaît.";
+                table.innerHTML = `
+                    <thead>
+                        <tr class="bg-slate-900 text-sky-400 border-b border-slate-800">
+                            <th class="py-3.5 px-4">patient_key</th>
+                            <th class="py-3.5 px-4">matricule_src</th>
+                            <th class="py-3.5 px-4">ville</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bg-rose-950/40 text-rose-300">
+                            <td class="py-3.5 px-4 font-bold">4021</td>
+                            <td class="py-3.5 px-4">P-889</td>
+                            <td class="py-3.5 px-4 font-bold">Casablanca (ÉCRASÉ !)</td>
+                        </tr>
+                    </tbody>
+                `;
+                factImpact.innerHTML = `
+                    <div class="p-2 bg-rose-950/40 rounded border border-rose-500/40 text-rose-300">Visite 2024 (500 MAD) ➔ liée à 4021 ➔ bascule faussement à <strong>Casablanca</strong> !</div>
+                    <div class="p-2 bg-slate-900 rounded border border-slate-800 text-slate-300">Visite 2026 (800 MAD) ➔ liée à 4021 ➔ <strong>Casablanca</strong></div>
+                `;
+                auditImpact.innerHTML = `<span class="text-rose-400 font-bold">❌ ERREUR D'AUDIT GRAVE :</span> Si on regénère le bilan financier 2024 aujourd'hui, Rabat perd 500 MAD au profit de Casablanca ! Le pilier "Non-Volatil / Historisé" est violé.`;
+            } else if (currentScdType === 2) {
+                title.textContent = "SCD Type 2 : Création de Ligne d'Historique (Standard Kimball)";
+                title.className = "text-xl sm:text-2xl font-bold text-emerald-400";
+                subtitle.textContent = "On clôture l'ancienne ligne (4021) et on en insère une nouvelle avec une nouvelle Surrogate Key (4099). L'analyse historique reste 100% exacte.";
+                table.innerHTML = `
+                    <thead>
+                        <tr class="bg-slate-900 text-sky-400 border-b border-slate-800">
+                            <th class="py-3.5 px-4">patient_key</th>
+                            <th class="py-3.5 px-4">matricule_src</th>
+                            <th class="py-3.5 px-4">ville</th>
+                            <th class="py-3.5 px-4">date_debut</th>
+                            <th class="py-3.5 px-4">date_fin</th>
+                            <th class="py-3.5 px-4">est_actif</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        <tr class="bg-rose-950/35 text-rose-300">
+                            <td class="py-3.5 px-4 font-bold">4021</td>
+                            <td class="py-3.5 px-4">P-889</td>
+                            <td class="py-3.5 px-4">Rabat</td>
+                            <td class="py-3.5 px-4">2024-01-01</td>
+                            <td class="py-3.5 px-4">2026-06-14</td>
+                            <td class="py-3.5 px-4 font-bold">FALSE</td>
+                        </tr>
+                        <tr class="bg-emerald-950/40 text-emerald-300">
+                            <td class="py-3.5 px-4 font-bold">4099</td>
+                            <td class="py-3.5 px-4">P-889</td>
+                            <td class="py-3.5 px-4 font-bold">Casablanca</td>
+                            <td class="py-3.5 px-4">2026-06-15</td>
+                            <td class="py-3.5 px-4">9999-12-31</td>
+                            <td class="py-3.5 px-4 font-bold">TRUE</td>
+                        </tr>
+                    </tbody>
+                `;
+                factImpact.innerHTML = `
+                    <div class="p-2 bg-emerald-950/30 rounded border border-emerald-500/30 text-emerald-300">✅ Visite 2024 (500 MAD) ➔ pointe toujours sur <strong>patient_key = 4021 (Rabat)</strong></div>
+                    <div class="p-2 bg-emerald-950/30 rounded border border-emerald-500/30 text-emerald-300">✅ Visite Juillet 2026 (800 MAD) ➔ pointe sur <strong>patient_key = 4099 (Casablanca)</strong></div>
+                `;
+                auditImpact.innerHTML = `<span class="text-emerald-400 font-bold">✅ VÉRITÉ HISTORIQUE PRÉSERVÉE :</span> Le rapport 2024 attribue toujours 500 MAD à Rabat, et le rapport S2 2026 attribue 800 MAD à Casablanca. C'est la méthode de référence absolue.`;
+            } else {
+                title.textContent = "SCD Type 3 : Ajout d'une Nouvelle Colonne (Historique Limité)";
+                title.className = "text-xl sm:text-2xl font-bold text-amber-400";
+                subtitle.textContent = "On garde une seule ligne mais on ajoute une colonne 'ancienne_ville'. Limité à un seul changement historique.";
+                table.innerHTML = `
+                    <thead>
+                        <tr class="bg-slate-900 text-sky-400 border-b border-slate-800">
+                            <th class="py-3.5 px-4">patient_key</th>
+                            <th class="py-3.5 px-4">matricule_src</th>
+                            <th class="py-3.5 px-4">ville_actuelle</th>
+                            <th class="py-3.5 px-4">ancienne_ville</th>
+                            <th class="py-3.5 px-4">date_changement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bg-amber-950/30 text-amber-200">
+                            <td class="py-3.5 px-4 font-bold">4021</td>
+                            <td class="py-3.5 px-4">P-889</td>
+                            <td class="py-3.5 px-4 font-bold text-emerald-400">Casablanca</td>
+                            <td class="py-3.5 px-4 text-rose-300">Rabat</td>
+                            <td class="py-3.5 px-4">2026-06-15</td>
+                        </tr>
+                    </tbody>
+                `;
+                factImpact.innerHTML = `
+                    <div class="p-2 bg-amber-950/30 rounded border border-amber-500/30 text-amber-200">⚠️ Toutes les visites pointent sur 4021. Si le patient déménage une 3ème fois à Marrakech, Rabat est perdu !</div>
+                `;
+                auditImpact.innerHTML = `<span class="text-amber-400 font-bold">⚠️ USAGE RESTREINT :</span> Le SCD Type 3 ne permet pas de ventiler automatiquement les faits historiques par date sans conditions complexes.`;
+            }
+        }
+
+        // INITIALIZE ALL INTERACTIVE MODULES ON LOAD
+        window.onload = function() {
+            initNavigation();
+            selectInmonPillar(0);
+            selectKimballStep(1);
+            inspectStarTable('FACT_VISITES');
+            updateLiveSqlBuilder();
+            setOlapOperation('dice');
+            renderScdView();
+        };
+    </script>
+</body>
+</html>

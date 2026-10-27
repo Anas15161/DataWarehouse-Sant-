@@ -783,35 +783,659 @@ body {
 }
 
 /* ==========================================================================
-   MODULE 12 : 4 QUESTIONS METIER & PIEGES D'EXAMEN
+   MODULE 12 : 4 QUESTIONS METIER CRITIQUES & PIEGES D'EXAMEN (PRO REFINEMENT)
    ========================================================================== */
-.qa-accordion { display: flex; flex-direction: column; gap: 1rem; }
+.qa-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  margin-bottom: 3rem;
+}
+
 .qa-card {
-  background: var(--bg-card); border: 1px solid var(--border-subtle);
-  border-radius: 16px; overflow: hidden;
+  background: rgba(13, 19, 44, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px);
 }
+
+.qa-card:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 15px rgba(56, 189, 248, 0.1);
+  transform: translateY(-2px);
+}
+
+.qa-card.active {
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 25px rgba(56, 189, 248, 0.15);
+}
+
 .qa-header {
-  padding: 1.4rem 1.8rem; cursor: pointer; display: flex;
-  align-items: center; justify-content: space-between;
-  background: rgba(255, 255, 255, 0.02);
+  padding: 1.35rem 1.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  user-select: none;
+  transition: background 0.25s ease;
 }
-.qa-header:hover { background: rgba(255, 255, 255, 0.05); }
-.qa-title-text { font-size: 1.05rem; font-weight: 800; color: #fff; }
+
+.qa-header:hover {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.08) 0%, rgba(129, 140, 248, 0.04) 100%);
+}
+
+.qa-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.qa-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.qa-id-badge {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+.qa-id-badge.rh { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
+.qa-id-badge.finance { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.35); }
+.qa-id-badge.geo { background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.35); }
+.qa-id-badge.flux { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); }
+
+.qa-theme-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.qa-target-table {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.qa-title-text {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.4;
+  letter-spacing: -0.2px;
+}
+
+.qa-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.qa-status-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.qa-chevron-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  font-size: 0.8rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qa-card:hover .qa-chevron-btn {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #fff;
+}
+
+.qa-card.active .qa-chevron-btn {
+  transform: rotate(180deg);
+  background: rgba(56, 189, 248, 0.2);
+  border-color: var(--primary);
+  box-shadow: 0 0 12px var(--primary-glow);
+}
+
 .qa-body {
-  display: none; padding: 1.8rem; border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(0, 0, 0, 0.25);
+  display: none;
+  padding: 1.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(7, 11, 28, 0.75);
 }
-.qa-body.active { display: block; }
+
+.qa-card.active .qa-body {
+  display: block;
+  animation: qaExpandSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes qaExpandSlide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Strategic Metadata Grid */
+.qa-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.qa-meta-box {
+  background: rgba(16, 24, 52, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.qa-meta-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.qa-meta-value {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.4;
+}
+
+.qa-pill-item {
+  display: inline-block;
+  background: rgba(56, 189, 248, 0.1);
+  color: #93c5fd;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.78rem;
+  margin: 0.1rem 0.2rem 0.1rem 0;
+}
+
+/* Modern Tab Bar */
+.qa-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.85rem;
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+}
+
+.qa-tab-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.qa-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.qa-tab-btn.active {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(129, 140, 248, 0.15));
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+}
+
+/* Tab Content */
+.qa-tab-content {
+  display: none;
+}
+
+.qa-tab-content.active {
+  display: block;
+  animation: qaTabFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes qaTabFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* SQL Window Terminal & Syntax Highlighting */
+.sql-window {
+  background: #060919;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.sql-window-bar {
+  background: rgba(14, 20, 48, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.65rem 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sql-window-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sql-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.sql-dot.red { background: #ef4444; }
+.sql-dot.yellow { background: #f59e0b; }
+.sql-dot.green { background: #10b981; }
+
+.sql-window-filename {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sql-window-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sql-dialect-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  text-transform: uppercase;
+}
+
+.sql-copy-btn {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  padding: 0.35rem 0.75rem;
+  border-radius: 7px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.sql-copy-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: #fff;
+  border-color: rgba(56, 189, 248, 0.5);
+  transform: translateY(-1px);
+}
+
+.sql-copy-btn.copied {
+  background: rgba(52, 211, 153, 0.2);
+  border-color: #34d399;
+  color: #34d399;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+}
+
+/* Syntax Highlighting Colors */
+.sql-code-box {
+  display: flex;
+  padding: 1.25rem 0;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.88rem;
+  line-height: 1.75;
+}
+
+.sql-gutters {
+  padding: 0 1.1rem;
+  text-align: right;
+  color: #475569;
+  user-select: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.82rem;
+  letter-spacing: 0.5px;
+}
+
+.sql-content {
+  padding: 0 1.5rem;
+  flex: 1;
+  white-space: pre;
+}
+
+/* High Contrast Syntax Highlighting */
+.sql-kw { color: #f59e0b; font-weight: 800; }          /* SELECT, FROM, JOIN, ON, GROUP BY, ORDER BY, WHERE, IN, AS, DESC */
+.sql-fn { color: #34d399; font-weight: 700; }          /* ROUND, AVG, SUM, COUNT */
+.sql-fact { color: #38bdf8; font-weight: 700; }        /* fact_visites_medicales */
+.sql-dim { color: #818cf8; font-weight: 700; }         /* dim_praticien, dim_temps, dim_patient */
+.sql-col { color: #f8fafc; font-weight: 500; }         /* specialite, anciennete_annees, nom_mois, etc. */
+.sql-meas { color: #fde047; font-weight: 600; }        /* duree_intervention_min, frais_consultation, visite_id */
+.sql-alias { color: #c084fc; font-weight: 700; }       /* duree_moyenne_min, chiffre_affaires_total, etc. */
+.sql-str { color: #fb7185; }                           /* 'Enfant', 'Senior' */
+.sql-num { color: #f43f5e; font-weight: 600; }         /* 1, 2 */
+.sql-com { color: #64748b; font-style: italic; }       /* -- Comments */
+.sql-tbl-alias { color: #67e8f9; font-weight: 600; }   /* f, p, t, pa, pr */
+
+/* OLAP Data Preview Table */
+.olap-preview-wrapper {
+  background: rgba(9, 13, 34, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.olap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.olap-table th {
+  background: rgba(19, 27, 60, 0.9);
+  padding: 0.85rem 1.1rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  color: #38bdf8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.olap-table td {
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+}
+
+.olap-table tr:hover td {
+  background: rgba(56, 189, 248, 0.04);
+  color: #fff;
+}
+
+.olap-bar-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.olap-mini-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  flex: 1;
+  overflow: hidden;
+  max-width: 120px;
+}
+
+.olap-mini-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.8s ease;
+}
+.olap-mini-fill.cyan { background: linear-gradient(90deg, #0284c7, #38bdf8); }
+.olap-mini-fill.emerald { background: linear-gradient(90deg, #059669, #34d399); }
+.olap-mini-fill.purple { background: linear-gradient(90deg, #7c3aed, #c084fc); }
+.olap-mini-fill.amber { background: linear-gradient(90deg, #d97706, #fbbf24); }
+
+.olap-table-footer {
+  padding: 0.75rem 1.1rem;
+  background: rgba(14, 20, 48, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  color: #94a3b8;
+}
+
+.olap-perf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #34d399;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+/* Technical Insight Box */
+.qa-insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.1rem;
+}
+
+.qa-insight-card {
+  background: rgba(14, 20, 48, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.qa-insight-card h5 {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.qa-insight-card p {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.55;
+}
+
+/* UPGRADED EXAM PITFALLS SECTION (5 PIEGES CRITIQUES) */
+.traps-section-header {
+  margin: 3.5rem 0 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.traps-section-header h3 {
+  font-size: 1.55rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f43f5e, #fb7185);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
 .trap-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
 }
+
 .trap-item {
-  background: rgba(244, 63, 94, 0.05); border: 1px solid rgba(244, 63, 94, 0.2);
-  border-radius: 16px; padding: 1.5rem;
+  background: linear-gradient(145deg, rgba(244, 63, 94, 0.05) 0%, rgba(15, 23, 42, 0.65) 100%);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  border-radius: 18px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
-.trap-item h4 { color: var(--accent-rose); font-size: 1.05rem; margin-bottom: 0.5rem; font-weight: 800; }
-.trap-item p { font-size: 0.88rem; color: #cbd5e1; }
+
+.trap-item:hover {
+  border-color: rgba(244, 63, 94, 0.5);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(244, 63, 94, 0.15);
+}
+
+.trap-item.highlight-span {
+  grid-column: span 2;
+}
+
+.trap-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.trap-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+}
+
+.trap-item h4 {
+  color: #fff;
+  font-size: 1.08rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.trap-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  margin-top: 0.35rem;
+}
+
+.trap-err-box {
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-radius: 10px;
+  padding: 0.85rem;
+  font-size: 0.8rem;
+}
+
+.trap-err-title {
+  color: #fb7185;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.trap-err-box code {
+  background: rgba(0, 0, 0, 0.35);
+  color: #fda4af;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.76rem;
+  display: inline-block;
+  margin-top: 0.25rem;
+}
+
+.trap-fix-box {
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: 10px;
+  padding: 0.85rem;
+  font-size: 0.8rem;
+}
+
+.trap-fix-title {
+  color: #34d399;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.trap-fix-box code {
+  background: rgba(0, 0, 0, 0.35);
+  color: #a7f3d0;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.76rem;
+  display: inline-block;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 900px) {
+  .qa-meta-grid, .qa-insight-grid, .trap-grid {
+    grid-template-columns: 1fr;
+  }
+  .trap-item.highlight-span {
+    grid-column: span 1;
+  }
+  .trap-compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* Responsive */
 @media (max-width: 1024px) {
@@ -1444,80 +2068,929 @@ body {
 <!-- SECTION 12 : QUESTIONS METIER & PIEGES D'EXAMEN -->
 <section class="section" id="faq-traps">
   <div class="section-header">
-    <div class="section-tag">12 • Cas d'Usage & Pièges</div>
+    <div class="section-tag">12 • ANALYTIQUE MÉTIER & PIÈGES D'EXAMEN</div>
     <h2 class="section-title">Les 4 Questions Métier Critiques & Les Pièges à Éviter</h2>
-    <p class="section-desc">Les réponses aux attentes de la direction hospitalière et les erreurs impardonnables en examen.</p>
+    <p class="section-desc">Requêtes SQL ANSI optimisées pour la direction du CHU, décryptage technique pas-à-pas, simulations de restitution OLAP et règles de modélisation infaillibles pour l'examen.</p>
   </div>
 
   <div class="qa-accordion">
-    <div class="qa-card">
+    <!-- ==================== QUESTION 1 ==================== -->
+    <div class="qa-card active" id="qaCard1">
       <div class="qa-header" onclick="toggleAccordion(this)">
-        <span class="qa-title-text">Q1 (RH) : Durée moyenne d'une consultation selon l'ancienneté du praticien ?</span>
-        <span style="color:var(--primary);">▼</span>
+        <div class="qa-header-left">
+          <div class="qa-badges-row">
+            <span class="qa-id-badge rh">Q1</span>
+            <span class="qa-theme-tag">RH & Performance Médicale</span>
+            <span class="qa-target-table">dim_praticien ⨝ fact_visites</span>
+          </div>
+          <span class="qa-title-text">Quelle est la durée moyenne d'une consultation selon l'ancienneté du praticien et par spécialité ?</span>
+        </div>
+        <div class="qa-header-right">
+          <span class="qa-status-pill"><span>⚡</span> SQL & Résultats</span>
+          <div class="qa-chevron-btn">▼</div>
+        </div>
       </div>
       <div class="qa-body">
-        <p style="color:var(--text-muted); margin-bottom:1rem;">Permet de vérifier si les novices passent significativement plus de temps par acte et d'optimiser le tutorat.</p>
-        <pre style="background:#090d24; padding:1rem; border-radius:10px; color:#93c5fd; font-size:0.85rem;"><code>SELECT p.specialite, p.anciennete_annees,
+        <!-- Metadata Grid -->
+        <div class="qa-meta-grid">
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">🎯 Objectif Directionnel</span>
+            <span class="qa-meta-value">Détecter si les praticiens juniors passent significativement plus de temps par acte, évaluer la courbe d'apprentissage et calibrer les besoins en tutorat hospitalier.</span>
+          </div>
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">📐 Axes d'Analyse (Dimensions)</span>
+            <div class="qa-meta-value">
+              <span class="qa-pill-item">dim_praticien.specialite</span>
+              <span class="qa-pill-item">dim_praticien.anciennete_annees</span>
+            </div>
+          </div>
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">📊 Mesures Chiffrées (Faits)</span>
+            <div class="qa-meta-value">
+              <span class="qa-pill-item">ROUND(AVG(duree_intervention_min), 1)</span>
+              <span class="qa-pill-item">COUNT(visite_id)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="qa-tabs-nav">
+          <button class="qa-tab-btn active" onclick="switchQaTab(this, 'qaCard1', 'sql')">
+            <span>💻</span> Requête SQL Formatée
+          </button>
+          <button class="qa-tab-btn" onclick="switchQaTab(this, 'qaCard1', 'preview')">
+            <span>📊</span> Résultat OLAP (Preview Data)
+          </button>
+          <button class="qa-tab-btn" onclick="switchQaTab(this, 'qaCard1', 'insight')">
+            <span>💡</span> Décryptage & Performance
+          </button>
+        </div>
+
+        <!-- Tab 1: SQL Code -->
+        <div class="qa-tab-content active" data-tab="sql">
+          <textarea id="rawSqlQ1" style="display:none;">SELECT p.specialite, p.anciennete_annees,
        ROUND(AVG(f.duree_intervention_min), 1) AS duree_moyenne_min,
-       COUNT(f.visite_id) AS total_consultations
+       COUNT(f.visite_id)                       AS total_consultations
 FROM fact_visites_medicales f
 JOIN dim_praticien p ON f.praticien_key = p.praticien_key
 GROUP BY p.specialite, p.anciennete_annees
-ORDER BY duree_moyenne_min DESC;</code></pre>
+ORDER BY duree_moyenne_min DESC;</textarea>
+
+          <div class="sql-window">
+            <div class="sql-window-bar">
+              <div class="sql-window-dots">
+                <span class="sql-dot red"></span>
+                <span class="sql-dot yellow"></span>
+                <span class="sql-dot green"></span>
+              </div>
+              <div class="sql-window-filename">
+                <span>📄</span> q1_rh_productivite_praticiens.sql
+              </div>
+              <div class="sql-window-actions">
+                <span class="sql-dialect-tag">ANSI SQL • PostgreSQL / BigQuery</span>
+                <button class="sql-copy-btn" onclick="copySqlCode(this, 'rawSqlQ1')">
+                  <span>📋</span> Copier le SQL
+                </button>
+              </div>
+            </div>
+            <div class="sql-code-box">
+              <div class="sql-gutters">01<br>02<br>03<br>04<br>05<br>06<br>07<br>08<br>09<br>10</div>
+              <div class="sql-content"><span class="sql-com">-- 1. Analyse croisée de la charge praticien selon la spécialité et l'expérience</span>
+<span class="sql-kw">SELECT</span> <span class="sql-tbl-alias">p</span>.<span class="sql-col">specialite</span>, 
+       <span class="sql-tbl-alias">p</span>.<span class="sql-col">anciennete_annees</span>,
+       <span class="sql-fn">ROUND</span>(<span class="sql-fn">AVG</span>(<span class="sql-tbl-alias">f</span>.<span class="sql-meas">duree_intervention_min</span>), <span class="sql-num">1</span>) <span class="sql-kw">AS</span> <span class="sql-alias">duree_moyenne_min</span>,
+       <span class="sql-fn">COUNT</span>(<span class="sql-tbl-alias">f</span>.<span class="sql-meas">visite_id</span>)                       <span class="sql-kw">AS</span> <span class="sql-alias">total_consultations</span>
+<span class="sql-kw">FROM</span> <span class="sql-fact">fact_visites_medicales</span> <span class="sql-tbl-alias">f</span>
+<span class="sql-kw">JOIN</span> <span class="sql-dim">dim_praticien</span> <span class="sql-tbl-alias">p</span> <span class="sql-kw">ON</span> <span class="sql-tbl-alias">f</span>.<span class="sql-col">praticien_key</span> = <span class="sql-tbl-alias">p</span>.<span class="sql-col">praticien_key</span>
+<span class="sql-kw">GROUP BY</span> <span class="sql-tbl-alias">p</span>.<span class="sql-col">specialite</span>, <span class="sql-tbl-alias">p</span>.<span class="sql-col">anciennete_annees</span>
+<span class="sql-kw">ORDER BY</span> <span class="sql-alias">duree_moyenne_min</span> <span class="sql-kw">DESC</span>;</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: OLAP Preview Table -->
+        <div class="qa-tab-content" data-tab="preview">
+          <div class="olap-preview-wrapper">
+            <table class="olap-table">
+              <thead>
+                <tr>
+                  <th>Spécialité Médicale</th>
+                  <th>Ancienneté</th>
+                  <th>Durée Moyenne</th>
+                  <th>Consultations</th>
+                  <th>Intensité Horaires (Visualisation)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Cardiologie</strong></td>
+                  <td><span class="qa-pill-item" style="color:#38bdf8;">1 an (Junior)</span></td>
+                  <td><strong style="color:#fbbf24;">48.5 min</strong></td>
+                  <td>342</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill cyan" style="width: 95%;"></div></div>
+                      <span style="font-size:0.75rem; color:#38bdf8;">95%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Neurologie</strong></td>
+                  <td><span class="qa-pill-item" style="color:#38bdf8;">2 ans (Junior)</span></td>
+                  <td><strong style="color:#fbbf24;">42.0 min</strong></td>
+                  <td>289</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill cyan" style="width: 82%;"></div></div>
+                      <span style="font-size:0.75rem; color:#38bdf8;">82%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Pédiatrie</strong></td>
+                  <td><span class="qa-pill-item" style="color:#818cf8;">6 ans (Confirmé)</span></td>
+                  <td><strong style="color:#e2e8f0;">26.4 min</strong></td>
+                  <td>815</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill cyan" style="width: 52%;"></div></div>
+                      <span style="font-size:0.75rem; color:#818cf8;">52%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Cardiologie</strong></td>
+                  <td><span class="qa-pill-item" style="color:#34d399;">16 ans (Senior)</span></td>
+                  <td><strong style="color:#34d399;">22.1 min</strong></td>
+                  <td>1 120</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill cyan" style="width: 43%;"></div></div>
+                      <span style="font-size:0.75rem; color:#34d399;">43%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Médecine Générale</strong></td>
+                  <td><span class="qa-pill-item" style="color:#34d399;">19 ans (Expert)</span></td>
+                  <td><strong style="color:#34d399;">16.5 min</strong></td>
+                  <td>2 450</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill cyan" style="width: 32%;"></div></div>
+                      <span style="font-size:0.75rem; color:#34d399;">32%</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="olap-table-footer">
+              <span>Restitution Data Mart RH • Échantillon agrégé sur 5 016 actes</span>
+              <span class="olap-perf-chip"><span>⚡</span> 34 ms • Index Scan B-Tree</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Insights & Performance -->
+        <div class="qa-tab-content" data-tab="insight">
+          <div class="qa-insight-grid">
+            <div class="qa-insight-card">
+              <h5><span>🎯</span> Grain & Clé Surrogate</h5>
+              <p>La table de faits est atomique (1 ligne par acte). La jointure est réalisée sur l'entier <code style="color:#38bdf8;">praticien_key</code> (4 octets), évitant le matricule textuel lourd de production.</p>
+            </div>
+            <div class="qa-insight-card">
+              <h5><span>📐</span> Conformité GROUP BY</h5>
+              <p>Toutes les colonnes non agrégées (<code style="color:#818cf8;">specialite</code>, <code style="color:#818cf8;">anciennete_annees</code>) sont rigoureusement reportées dans le <code>GROUP BY</code>. <code>AVG</code> est arrondi à 1 décimale.</p>
+            </div>
+            <div class="qa-insight-card">
+              <h5><span>⚡</span> Décision Directionnelle</h5>
+              <p>Mise en évidence : les juniors en cardiologie passent 2.2x plus de temps par patient que les seniors. Le CHU doit instaurer des créneaux de consultation doublés pour le tutorat clinique.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="qa-card">
+    <!-- ==================== QUESTION 2 ==================== -->
+    <div class="qa-card" id="qaCard2">
       <div class="qa-header" onclick="toggleAccordion(this)">
-        <span class="qa-title-text">Q2 (Rentabilité) : Chiffre d'affaires mensuel jour vs nuit par spécialité ?</span>
-        <span style="color:var(--primary);">▼</span>
+        <div class="qa-header-left">
+          <div class="qa-badges-row">
+            <span class="qa-id-badge finance">Q2</span>
+            <span class="qa-theme-tag">Finances & Rentabilité</span>
+            <span class="qa-target-table">dim_temps ⨝ fact_visites ⨝ dim_praticien</span>
+          </div>
+          <span class="qa-title-text">Quel est le chiffre d'affaires mensuel et le tarif moyen générés jour vs nuit par spécialité ?</span>
+        </div>
+        <div class="qa-header-right">
+          <span class="qa-status-pill"><span>⚡</span> SQL & Résultats</span>
+          <div class="qa-chevron-btn">▼</div>
+        </div>
       </div>
       <div class="qa-body">
-        <p style="color:var(--text-muted); margin-bottom:1rem;">Mesure la charge financière des gardes de nuit et la rentabilité respective des plateaux techniques.</p>
-        <pre style="background:#090d24; padding:1rem; border-radius:10px; color:#93c5fd; font-size:0.85rem;"><code>SELECT t.annee, t.nom_mois, p.specialite, t.moment_journee,
-       SUM(f.frais_consultation) AS chiffre_affaires_total,
+        <!-- Metadata Grid -->
+        <div class="qa-meta-grid">
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">🎯 Objectif Directionnel</span>
+            <span class="qa-meta-value">Mesurer la rentabilité des plateaux techniques, isoler le surcoût/chiffre d'affaires des gardes nocturnes et ajuster les forfaits tarifaires.</span>
+          </div>
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">📐 Axes d'Analyse (Dimensions)</span>
+            <div class="qa-meta-value">
+              <span class="qa-pill-item">dim_temps (annee, nom_mois, moment_journee)</span>
+              <span class="qa-pill-item">dim_praticien.specialite</span>
+            </div>
+          </div>
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">📊 Mesures Chiffrées (Faits)</span>
+            <div class="qa-meta-value">
+              <span class="qa-pill-item">SUM(frais_consultation)</span>
+              <span class="qa-pill-item">ROUND(AVG(frais_consultation), 2)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="qa-tabs-nav">
+          <button class="qa-tab-btn active" onclick="switchQaTab(this, 'qaCard2', 'sql')">
+            <span>💻</span> Requête SQL Formatée
+          </button>
+          <button class="qa-tab-btn" onclick="switchQaTab(this, 'qaCard2', 'preview')">
+            <span>📊</span> Résultat OLAP (Preview Data)
+          </button>
+          <button class="qa-tab-btn" onclick="switchQaTab(this, 'qaCard2', 'insight')">
+            <span>💡</span> Décryptage & Performance
+          </button>
+        </div>
+
+        <!-- Tab 1: SQL Code -->
+        <div class="qa-tab-content active" data-tab="sql">
+          <textarea id="rawSqlQ2" style="display:none;">SELECT t.annee, t.nom_mois, p.specialite, t.moment_journee,
+       SUM(f.frais_consultation)           AS chiffre_affaires_total,
        ROUND(AVG(f.frais_consultation), 2) AS tarif_moyen_facture
 FROM fact_visites_medicales f
-JOIN dim_temps t ON f.date_key = t.date_key
-JOIN dim_praticien p ON f.praticien_key = p.praticien_key
-GROUP BY t.annee, t.nom_mois, p.specialite, t.moment_journee;</code></pre>
+JOIN dim_temps t      ON f.date_key = t.date_key
+JOIN dim_praticien p  ON f.praticien_key = p.praticien_key
+GROUP BY t.annee, t.nom_mois, p.specialite, t.moment_journee
+ORDER BY t.annee DESC, chiffre_affaires_total DESC;</textarea>
+
+          <div class="sql-window">
+            <div class="sql-window-bar">
+              <div class="sql-window-dots">
+                <span class="sql-dot red"></span>
+                <span class="sql-dot yellow"></span>
+                <span class="sql-dot green"></span>
+              </div>
+              <div class="sql-window-filename">
+                <span>📄</span> q2_rentabilite_recettes_jour_nuit.sql
+              </div>
+              <div class="sql-window-actions">
+                <span class="sql-dialect-tag">ANSI SQL • Multi-Star Join</span>
+                <button class="sql-copy-btn" onclick="copySqlCode(this, 'rawSqlQ2')">
+                  <span>📋</span> Copier le SQL
+                </button>
+              </div>
+            </div>
+            <div class="sql-code-box">
+              <div class="sql-gutters">01<br>02<br>03<br>04<br>05<br>06<br>07<br>08<br>09<br>10<br>11<br>12</div>
+              <div class="sql-content"><span class="sql-com">-- 2. Recettes mensuelles et analyse différentielle Jour vs Nuit (Plateaux CHU)</span>
+<span class="sql-kw">SELECT</span> <span class="sql-tbl-alias">t</span>.<span class="sql-col">annee</span>, <span class="sql-tbl-alias">t</span>.<span class="sql-col">nom_mois</span>, <span class="sql-tbl-alias">p</span>.<span class="sql-col">specialite</span>, <span class="sql-tbl-alias">t</span>.<span class="sql-col">moment_journee</span>,
+       <span class="sql-fn">SUM</span>(<span class="sql-tbl-alias">f</span>.<span class="sql-meas">frais_consultation</span>)           <span class="sql-kw">AS</span> <span class="sql-alias">chiffre_affaires_total</span>,
+       <span class="sql-fn">ROUND</span>(<span class="sql-fn">AVG</span>(<span class="sql-tbl-alias">f</span>.<span class="sql-meas">frais_consultation</span>), <span class="sql-num">2</span>) <span class="sql-kw">AS</span> <span class="sql-alias">tarif_moyen_facture</span>
+<span class="sql-kw">FROM</span> <span class="sql-fact">fact_visites_medicales</span> <span class="sql-tbl-alias">f</span>
+<span class="sql-kw">JOIN</span> <span class="sql-dim">dim_temps</span> <span class="sql-tbl-alias">t</span>      <span class="sql-kw">ON</span> <span class="sql-tbl-alias">f</span>.<span class="sql-col">date_key</span> = <span class="sql-tbl-alias">t</span>.<span class="sql-col">date_key</span>
+<span class="sql-kw">JOIN</span> <span class="sql-dim">dim_praticien</span> <span class="sql-tbl-alias">p</span>  <span class="sql-kw">ON</span> <span class="sql-tbl-alias">f</span>.<span class="sql-col">praticien_key</span> = <span class="sql-tbl-alias">p</span>.<span class="sql-col">praticien_key</span>
+<span class="sql-kw">GROUP BY</span> <span class="sql-tbl-alias">t</span>.<span class="sql-col">annee</span>, <span class="sql-tbl-alias">t</span>.<span class="sql-col">nom_mois</span>, <span class="sql-tbl-alias">p</span>.<span class="sql-col">specialite</span>, <span class="sql-tbl-alias">t</span>.<span class="sql-col">moment_journee</span>
+<span class="sql-kw">ORDER BY</span> <span class="sql-tbl-alias">t</span>.<span class="sql-col">annee</span> <span class="sql-kw">DESC</span>, <span class="sql-alias">chiffre_affaires_total</span> <span class="sql-kw">DESC</span>;</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: OLAP Preview Table -->
+        <div class="qa-tab-content" data-tab="preview">
+          <div class="olap-preview-wrapper">
+            <table class="olap-table">
+              <thead>
+                <tr>
+                  <th>Mois</th>
+                  <th>Spécialité</th>
+                  <th>Créneau</th>
+                  <th>CA Total (MAD)</th>
+                  <th>Tarif Moyen</th>
+                  <th>Volume Relatif</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2026 - Octobre</td>
+                  <td><strong>Urgences Chirurgicales</strong></td>
+                  <td><span class="qa-pill-item" style="color:#c084fc;">🌙 Nuit (Garde)</span></td>
+                  <td><strong style="color:#34d399;">485 200 MAD</strong></td>
+                  <td>650.00 MAD</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill emerald" style="width: 96%;"></div></div>
+                      <span style="font-size:0.75rem; color:#34d399;">96%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2026 - Octobre</td>
+                  <td><strong>Cardiologie</strong></td>
+                  <td><span class="qa-pill-item" style="color:#38bdf8;">☀️ Journée</span></td>
+                  <td><strong style="color:#34d399;">412 800 MAD</strong></td>
+                  <td>480.00 MAD</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill emerald" style="width: 82%;"></div></div>
+                      <span style="font-size:0.75rem; color:#34d399;">82%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2026 - Octobre</td>
+                  <td><strong>Radiologie & IRM</strong></td>
+                  <td><span class="qa-pill-item" style="color:#38bdf8;">☀️ Journée</span></td>
+                  <td><strong style="color:#34d399;">320 000 MAD</strong></td>
+                  <td>320.00 MAD</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill emerald" style="width: 63%;"></div></div>
+                      <span style="font-size:0.75rem; color:#34d399;">63%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2026 - Octobre</td>
+                  <td><strong>Pédiatrie d'Urgence</strong></td>
+                  <td><span class="qa-pill-item" style="color:#c084fc;">🌙 Nuit (Garde)</span></td>
+                  <td><strong style="color:#e2e8f0;">198 400 MAD</strong></td>
+                  <td>420.00 MAD</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill emerald" style="width: 39%;"></div></div>
+                      <span style="font-size:0.75rem; color:#818cf8;">39%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2026 - Octobre</td>
+                  <td><strong>Médecine Interne</strong></td>
+                  <td><span class="qa-pill-item" style="color:#38bdf8;">☀️ Journée</span></td>
+                  <td><strong style="color:#e2e8f0;">145 600 MAD</strong></td>
+                  <td>280.00 MAD</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill emerald" style="width: 29%;"></div></div>
+                      <span style="font-size:0.75rem; color:#818cf8;">29%</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="olap-table-footer">
+              <span>Restitution Data Mart Finances • Total période : 1 562 000 MAD</span>
+              <span class="olap-perf-chip"><span>⚡</span> 41 ms • Partition Pruning Temps</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Insights & Performance -->
+        <div class="qa-tab-content" data-tab="insight">
+          <div class="qa-insight-grid">
+            <div class="qa-insight-card">
+              <h5><span>🎯</span> Règle d'Additivité</h5>
+              <p><code>frais_consultation</code> est une mesure 100% additive. On peut la sommer à travers le temps, les services et les moments de la journée sans biais mathématique.</p>
+            </div>
+            <div class="qa-insight-card">
+              <h5><span>📐</span> Double Jointure en Étoile</h5>
+              <p>La requête relie la table de faits à deux branches de l'étoile (<code style="color:#818cf8;">dim_temps</code> et <code style="color:#818cf8;">dim_praticien</code>). Plan d'exécution en Hash Join parallèle ultra-performant.</p>
+            </div>
+            <div class="qa-insight-card">
+              <h5><span>⚡</span> Décision Métier DAF</h5>
+              <p>La majoration de nuit (+35%) compense le surcoût des indemnités de garde et dégage une marge d'exploitation nette positive sur les urgences chirurgicales.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="qa-card">
+    <!-- ==================== QUESTION 3 ==================== -->
+    <div class="qa-card" id="qaCard3">
       <div class="qa-header" onclick="toggleAccordion(this)">
-        <span class="qa-title-text">Q3 (Territoire) : Bassin de provenance géographique selon la tranche d'âge ?</span>
-        <span style="color:var(--primary);">▼</span>
+        <div class="qa-header-left">
+          <div class="qa-badges-row">
+            <span class="qa-id-badge geo">Q3</span>
+            <span class="qa-theme-tag">Bassin & Démographie</span>
+            <span class="qa-target-table">dim_patient ⨝ fact_visites ⨝ dim_praticien</span>
+          </div>
+          <span class="qa-title-text">Quel est le bassin de provenance géographique selon la tranche d'âge des patients ?</span>
+        </div>
+        <div class="qa-header-right">
+          <span class="qa-status-pill"><span>⚡</span> SQL & Résultats</span>
+          <div class="qa-chevron-btn">▼</div>
+        </div>
       </div>
       <div class="qa-body">
-        <p style="color:var(--text-muted); margin-bottom:1rem;">Identifie les régions sous-équipées dont les patients affluent vers le centre hospitalier de Rabat.</p>
-        <pre style="background:#090d24; padding:1rem; border-radius:10px; color:#93c5fd; font-size:0.85rem;"><code>SELECT pa.ville_provenance, pa.tranche_age, pr.specialite,
+        <!-- Metadata Grid -->
+        <div class="qa-meta-grid">
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">🎯 Objectif Directionnel</span>
+            <span class="qa-meta-value">Cartographier les zones de désert médical environnantes (Salé, Kénitra, Khémisset) affluant vers Rabat pour planifier des antennes médicales décentralisées.</span>
+          </div>
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">📐 Axes d'Analyse (Dimensions)</span>
+            <div class="qa-meta-value">
+              <span class="qa-pill-item">dim_patient.ville_provenance</span>
+              <span class="qa-pill-item">dim_patient.tranche_age</span>
+              <span class="qa-pill-item">dim_praticien.specialite</span>
+            </div>
+          </div>
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">📊 Mesures Chiffrées (Faits)</span>
+            <div class="qa-meta-value">
+              <span class="qa-pill-item">COUNT(visite_id) AS volume_patients</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="qa-tabs-nav">
+          <button class="qa-tab-btn active" onclick="switchQaTab(this, 'qaCard3', 'sql')">
+            <span>💻</span> Requête SQL Formatée
+          </button>
+          <button class="qa-tab-btn" onclick="switchQaTab(this, 'qaCard3', 'preview')">
+            <span>📊</span> Résultat OLAP (Preview Data)
+          </button>
+          <button class="qa-tab-btn" onclick="switchQaTab(this, 'qaCard3', 'insight')">
+            <span>💡</span> Décryptage & Performance
+          </button>
+        </div>
+
+        <!-- Tab 1: SQL Code -->
+        <div class="qa-tab-content active" data-tab="sql">
+          <textarea id="rawSqlQ3" style="display:none;">SELECT pa.ville_provenance, pa.tranche_age, pr.specialite,
        COUNT(f.visite_id) AS volume_patients
 FROM fact_visites_medicales f
-JOIN dim_patient pa ON f.patient_key = pa.patient_key
+JOIN dim_patient pa   ON f.patient_key = pa.patient_key
 JOIN dim_praticien pr ON f.praticien_key = pr.praticien_key
 GROUP BY pa.ville_provenance, pa.tranche_age, pr.specialite
-ORDER BY volume_patients DESC;</code></pre>
+ORDER BY volume_patients DESC;</textarea>
+
+          <div class="sql-window">
+            <div class="sql-window-bar">
+              <div class="sql-window-dots">
+                <span class="sql-dot red"></span>
+                <span class="sql-dot yellow"></span>
+                <span class="sql-dot green"></span>
+              </div>
+              <div class="sql-window-filename">
+                <span>📄</span> q3_bassin_geographique_patients.sql
+              </div>
+              <div class="sql-window-actions">
+                <span class="sql-dialect-tag">ANSI SQL • Cross-Dimensional</span>
+                <button class="sql-copy-btn" onclick="copySqlCode(this, 'rawSqlQ3')">
+                  <span>📋</span> Copier le SQL
+                </button>
+              </div>
+            </div>
+            <div class="sql-code-box">
+              <div class="sql-gutters">01<br>02<br>03<br>04<br>05<br>06<br>07<br>08<br>09</div>
+              <div class="sql-content"><span class="sql-com">-- 3. Attraction territoriale et segmentation démographique par pathologie</span>
+<span class="sql-kw">SELECT</span> <span class="sql-tbl-alias">pa</span>.<span class="sql-col">ville_provenance</span>, <span class="sql-tbl-alias">pa</span>.<span class="sql-col">tranche_age</span>, <span class="sql-tbl-alias">pr</span>.<span class="sql-col">specialite</span>,
+       <span class="sql-fn">COUNT</span>(<span class="sql-tbl-alias">f</span>.<span class="sql-meas">visite_id</span>) <span class="sql-kw">AS</span> <span class="sql-alias">volume_patients</span>
+<span class="sql-kw">FROM</span> <span class="sql-fact">fact_visites_medicales</span> <span class="sql-tbl-alias">f</span>
+<span class="sql-kw">JOIN</span> <span class="sql-dim">dim_patient</span> <span class="sql-tbl-alias">pa</span>   <span class="sql-kw">ON</span> <span class="sql-tbl-alias">f</span>.<span class="sql-col">patient_key</span> = <span class="sql-tbl-alias">pa</span>.<span class="sql-col">patient_key</span>
+<span class="sql-kw">JOIN</span> <span class="sql-dim">dim_praticien</span> <span class="sql-tbl-alias">pr</span> <span class="sql-kw">ON</span> <span class="sql-tbl-alias">f</span>.<span class="sql-col">praticien_key</span> = <span class="sql-tbl-alias">pr</span>.<span class="sql-col">praticien_key</span>
+<span class="sql-kw">GROUP BY</span> <span class="sql-tbl-alias">pa</span>.<span class="sql-col">ville_provenance</span>, <span class="sql-tbl-alias">pa</span>.<span class="sql-col">tranche_age</span>, <span class="sql-tbl-alias">pr</span>.<span class="sql-col">specialite</span>
+<span class="sql-kw">ORDER BY</span> <span class="sql-alias">volume_patients</span> <span class="sql-kw">DESC</span>;</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: OLAP Preview Table -->
+        <div class="qa-tab-content" data-tab="preview">
+          <div class="olap-preview-wrapper">
+            <table class="olap-table">
+              <thead>
+                <tr>
+                  <th>Ville Provenance</th>
+                  <th>Tranche d'Âge</th>
+                  <th>Spécialité Demandée</th>
+                  <th>Volume Patients</th>
+                  <th>Taux de Fréquentation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Rabat (Agglomération)</strong></td>
+                  <td><span class="qa-pill-item" style="color:#fbbf24;">60+ ans (Senior)</span></td>
+                  <td>Cardiologie & Vasculaire</td>
+                  <td><strong style="color:#c084fc;">2 150</strong></td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill purple" style="width: 92%;"></div></div>
+                      <span style="font-size:0.75rem; color:#c084fc;">92%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Salé (Rive Droite)</strong></td>
+                  <td><span class="qa-pill-item" style="color:#38bdf8;">18-59 ans (Adulte)</span></td>
+                  <td>Traumatologie / Urgences</td>
+                  <td><strong style="color:#c084fc;">1 680</strong></td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill purple" style="width: 72%;"></div></div>
+                      <span style="font-size:0.75rem; color:#c084fc;">72%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Kénitra (Nord)</strong></td>
+                  <td><span class="qa-pill-item" style="color:#34d399;">0-17 ans (Enfant)</span></td>
+                  <td>Pédiatrie de Spécialité</td>
+                  <td><strong style="color:#c084fc;">1 120</strong></td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill purple" style="width: 48%;"></div></div>
+                      <span style="font-size:0.75rem; color:#c084fc;">48%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Khémisset</strong></td>
+                  <td><span class="qa-pill-item" style="color:#fbbf24;">60+ ans (Senior)</span></td>
+                  <td>Oncologie & Chimiothérapie</td>
+                  <td><strong style="color:#e2e8f0;">740</strong></td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill purple" style="width: 32%;"></div></div>
+                      <span style="font-size:0.75rem; color:#94a3b8;">32%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Témara</strong></td>
+                  <td><span class="qa-pill-item" style="color:#38bdf8;">18-59 ans (Adulte)</span></td>
+                  <td>Orthopédie Ambulatoire</td>
+                  <td><strong style="color:#e2e8f0;">590</strong></td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill purple" style="width: 25%;"></div></div>
+                      <span style="font-size:0.75rem; color:#94a3b8;">25%</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="olap-table-footer">
+              <span>Restitution Data Mart Épidémiologie • 6 280 dossiers patients analysés</span>
+              <span class="olap-perf-chip"><span>⚡</span> 28 ms • Bitmap Index Scan</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Insights & Performance -->
+        <div class="qa-tab-content" data-tab="insight">
+          <div class="qa-insight-grid">
+            <div class="qa-insight-card">
+              <h5><span>🎯</span> Dénormalisation en Étoile</h5>
+              <p><code style="color:#818cf8;">ville_provenance</code> et <code style="color:#818cf8;">tranche_age</code> sont consolidées dans la même dimension, évitant de créer des tables géographiques en flocon.</p>
+            </div>
+            <div class="qa-insight-card">
+              <h5><span>📐</span> Préservation SCD Type 2</h5>
+              <p>Si un patient déménage de Kénitra à Rabat, son historique antérieur reste imputé à Kénitra grâce à la clé surrogate <code style="color:#38bdf8;">patient_key</code> historisée.</p>
+            </div>
+            <div class="qa-insight-card">
+              <h5><span>⚡</span> Décision d'Aménagement</h5>
+              <p>Mise en lumière : 40% des consultations pédiatriques viennent de Kénitra. Justification formelle pour l'ouverture d'une antenne pédiatrique délocalisée au nord de la région.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== QUESTION 4 ==================== -->
+    <div class="qa-card" id="qaCard4">
+      <div class="qa-header" onclick="toggleAccordion(this)">
+        <div class="qa-header-left">
+          <div class="qa-badges-row">
+            <span class="qa-id-badge flux">Q4</span>
+            <span class="qa-theme-tag">Flux & Saisonnalité Épidémique</span>
+            <span class="qa-target-table">dim_temps ⨝ fact_visites ⨝ dim_patient</span>
+          </div>
+          <span class="qa-title-text">Quels sont les jours de la semaine et les mois présentant une sur-sollicitation critique pour les patients vulnérables ?</span>
+        </div>
+        <div class="qa-header-right">
+          <span class="qa-status-pill"><span>⚡</span> SQL & Résultats</span>
+          <div class="qa-chevron-btn">▼</div>
+        </div>
+      </div>
+      <div class="qa-body">
+        <!-- Metadata Grid -->
+        <div class="qa-meta-grid">
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">🎯 Objectif Directionnel</span>
+            <span class="qa-meta-value">Anticiper les vagues épidémiques saisonnières (bronchiolites pédiatriques, grippe chez les seniors) pour réguler les congés et ouvrir des lits d'urgence tampons.</span>
+          </div>
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">📐 Axes d'Analyse (Dimensions)</span>
+            <div class="qa-meta-value">
+              <span class="qa-pill-item">dim_temps (nom_mois, nom_jour)</span>
+              <span class="qa-pill-item">dim_patient.tranche_age</span>
+            </div>
+          </div>
+          <div class="qa-meta-box">
+            <span class="qa-meta-label">📊 Mesures Chiffrées (Faits)</span>
+            <div class="qa-meta-value">
+              <span class="qa-pill-item">COUNT(visite_id) AS total_consultations</span>
+              <span class="qa-pill-item">ROUND(AVG(duree_intervention_min), 1)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="qa-tabs-nav">
+          <button class="qa-tab-btn active" onclick="switchQaTab(this, 'qaCard4', 'sql')">
+            <span>💻</span> Requête SQL Formatée
+          </button>
+          <button class="qa-tab-btn" onclick="switchQaTab(this, 'qaCard4', 'preview')">
+            <span>📊</span> Résultat OLAP (Preview Data)
+          </button>
+          <button class="qa-tab-btn" onclick="switchQaTab(this, 'qaCard4', 'insight')">
+            <span>💡</span> Décryptage & Performance
+          </button>
+        </div>
+
+        <!-- Tab 1: SQL Code -->
+        <div class="qa-tab-content active" data-tab="sql">
+          <textarea id="rawSqlQ4" style="display:none;">SELECT t.nom_mois, t.nom_jour, pa.tranche_age,
+       COUNT(f.visite_id)                      AS total_consultations,
+       ROUND(AVG(f.duree_intervention_min), 1) AS duree_moyenne_min
+FROM fact_visites_medicales f
+JOIN dim_temps t    ON f.date_key = t.date_key
+JOIN dim_patient pa ON f.patient_key = pa.patient_key
+WHERE pa.tranche_age IN ('0-17 ans (Enfant)', '60+ ans (Senior)')
+GROUP BY t.nom_mois, t.nom_jour, pa.tranche_age
+ORDER BY total_consultations DESC;</textarea>
+
+          <div class="sql-window">
+            <div class="sql-window-bar">
+              <div class="sql-window-dots">
+                <span class="sql-dot red"></span>
+                <span class="sql-dot yellow"></span>
+                <span class="sql-dot green"></span>
+              </div>
+              <div class="sql-window-filename">
+                <span>📄</span> q4_saisonnalite_saturation_urgences.sql
+              </div>
+              <div class="sql-window-actions">
+                <span class="sql-dialect-tag">ANSI SQL • Filtered Aggregation</span>
+                <button class="sql-copy-btn" onclick="copySqlCode(this, 'rawSqlQ4')">
+                  <span>📋</span> Copier le SQL
+                </button>
+              </div>
+            </div>
+            <div class="sql-code-box">
+              <div class="sql-gutters">01<br>02<br>03<br>04<br>05<br>06<br>07<br>08<br>09<br>10<br>11</div>
+              <div class="sql-content"><span class="sql-com">-- 4. Détection des pics d'engorgement pour les populations sensibles</span>
+<span class="sql-kw">SELECT</span> <span class="sql-tbl-alias">t</span>.<span class="sql-col">nom_mois</span>, <span class="sql-tbl-alias">t</span>.<span class="sql-col">nom_jour</span>, <span class="sql-tbl-alias">pa</span>.<span class="sql-col">tranche_age</span>,
+       <span class="sql-fn">COUNT</span>(<span class="sql-tbl-alias">f</span>.<span class="sql-meas">visite_id</span>)                      <span class="sql-kw">AS</span> <span class="sql-alias">total_consultations</span>,
+       <span class="sql-fn">ROUND</span>(<span class="sql-fn">AVG</span>(<span class="sql-tbl-alias">f</span>.<span class="sql-meas">duree_intervention_min</span>), <span class="sql-num">1</span>) <span class="sql-kw">AS</span> <span class="sql-alias">duree_moyenne_min</span>
+<span class="sql-kw">FROM</span> <span class="sql-fact">fact_visites_medicales</span> <span class="sql-tbl-alias">f</span>
+<span class="sql-kw">JOIN</span> <span class="sql-dim">dim_temps</span> <span class="sql-tbl-alias">t</span>    <span class="sql-kw">ON</span> <span class="sql-tbl-alias">f</span>.<span class="sql-col">date_key</span> = <span class="sql-tbl-alias">t</span>.<span class="sql-col">date_key</span>
+<span class="sql-kw">JOIN</span> <span class="sql-dim">dim_patient</span> <span class="sql-tbl-alias">pa</span> <span class="sql-kw">ON</span> <span class="sql-tbl-alias">f</span>.<span class="sql-col">patient_key</span> = <span class="sql-tbl-alias">pa</span>.<span class="sql-col">patient_key</span>
+<span class="sql-kw">WHERE</span> <span class="sql-tbl-alias">pa</span>.<span class="sql-col">tranche_age</span> <span class="sql-kw">IN</span> (<span class="sql-str">'0-17 ans (Enfant)'</span>, <span class="sql-str">'60+ ans (Senior)'</span>)
+<span class="sql-kw">GROUP BY</span> <span class="sql-tbl-alias">t</span>.<span class="sql-col">nom_mois</span>, <span class="sql-tbl-alias">t</span>.<span class="sql-col">nom_jour</span>, <span class="sql-tbl-alias">pa</span>.<span class="sql-col">tranche_age</span>
+<span class="sql-kw">ORDER BY</span> <span class="sql-alias">total_consultations</span> <span class="sql-kw">DESC</span>;</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: OLAP Preview Table -->
+        <div class="qa-tab-content" data-tab="preview">
+          <div class="olap-preview-wrapper">
+            <table class="olap-table">
+              <thead>
+                <tr>
+                  <th>Mois</th>
+                  <th>Jour</th>
+                  <th>Population Ciblée</th>
+                  <th>Consultations</th>
+                  <th>Durée Moy.</th>
+                  <th>Alerte Saturation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Décembre</strong></td>
+                  <td>Lundi</td>
+                  <td><span class="qa-pill-item" style="color:#fbbf24;">60+ ans (Senior)</span></td>
+                  <td><strong style="color:#fbbf24;">2 480</strong></td>
+                  <td>34.2 min</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill amber" style="width: 98%;"></div></div>
+                      <span style="font-size:0.75rem; color:#f43f5e; font-weight:700;">🚨 PIC MAX</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Janvier</strong></td>
+                  <td>Samedi</td>
+                  <td><span class="qa-pill-item" style="color:#38bdf8;">0-17 ans (Enfant)</span></td>
+                  <td><strong style="color:#fbbf24;">2 110</strong></td>
+                  <td>29.1 min</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill amber" style="width: 84%;"></div></div>
+                      <span style="font-size:0.75rem; color:#f59e0b; font-weight:700;">⚠️ TENSION</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Novembre</strong></td>
+                  <td>Lundi</td>
+                  <td><span class="qa-pill-item" style="color:#fbbf24;">60+ ans (Senior)</span></td>
+                  <td><strong style="color:#fbbf24;">1 890</strong></td>
+                  <td>31.5 min</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill amber" style="width: 75%;"></div></div>
+                      <span style="font-size:0.75rem; color:#f59e0b; font-weight:700;">⚠️ TENSION</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Février</strong></td>
+                  <td>Dimanche</td>
+                  <td><span class="qa-pill-item" style="color:#38bdf8;">0-17 ans (Enfant)</span></td>
+                  <td><strong style="color:#e2e8f0;">1 640</strong></td>
+                  <td>27.8 min</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill amber" style="width: 65%;"></div></div>
+                      <span style="font-size:0.75rem; color:#38bdf8;">ÉLEVÉ</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Juillet</strong></td>
+                  <td>Mercredi</td>
+                  <td><span class="qa-pill-item" style="color:#38bdf8;">0-17 ans (Enfant)</span></td>
+                  <td><strong style="color:#e2e8f0;">1 150</strong></td>
+                  <td>21.0 min</td>
+                  <td>
+                    <div class="olap-bar-cell">
+                      <div class="olap-mini-bar"><div class="olap-mini-fill amber" style="width: 45%;"></div></div>
+                      <span style="font-size:0.75rem; color:#34d399;">NORMAL</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="olap-table-footer">
+              <span>Restitution Data Mart Flux Urgences • Focus Populations Sensibles</span>
+              <span class="olap-perf-chip"><span>⚡</span> 31 ms • HashAggregate</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Insights & Performance -->
+        <div class="qa-tab-content" data-tab="insight">
+          <div class="qa-insight-grid">
+            <div class="qa-insight-card">
+              <h5><span>🎯</span> Filtrage Précoce WHERE</h5>
+              <p>Le filtre <code>WHERE pa.tranche_age IN (...)</code> réduit de 60% le nombre de tuples dès l'entrée du pipeline avant les jointures et l'agrégation spatio-temporelle.</p>
+            </div>
+            <div class="qa-insight-card">
+              <h5><span>📐</span> Double Pic Distinct</h5>
+              <p>Mise en évidence du pic gériatrique du lundi matin (suivi post-weekend) et du pic pédiatrique du weekend (fermeture des cabinets de ville).</p>
+            </div>
+            <div class="qa-insight-card">
+              <h5><span>⚡</span> Régulation Hospitalière</h5>
+              <p>Permet à la direction de geler les congés médicaux entre le 15 décembre et le 10 janvier et d'activer 20 lits tampons d'hospitalisation de courte durée (UHCD).</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- UPGRADED EXAM PITFALLS SECTION (5 PIÈGES CRITIQUES) -->
+  <div class="traps-section-header">
+    <span style="font-size: 1.6rem;">⚠️</span>
+    <h3>Les 5 Pièges Fréquents d'Examen à Éviter Absolument</h3>
+  </div>
+
   <div class="trap-grid">
+    <!-- Piège 1 -->
     <div class="trap-item">
-      <h4>🚫 Piège 1 : Confondre Attribut et Mesure</h4>
-      <p>L'âge du patient est un nombre, mais il sert à regrouper et filtrer (0-17, 18-60). C'est un <strong>attribut de dimension</strong> et non un fait chiffré !</p>
+      <div class="trap-top-bar">
+        <span class="trap-badge">Erreur Conceptuelle N°1</span>
+        <span style="font-size:1.2rem;">🚫</span>
+      </div>
+      <h4>Confondre Attribut et Mesure</h4>
+      <p>L'âge du patient ou l'ancienneté sont des nombres, mais ils ne quantifient pas l'acte : ils servent à filtrer et grouper !</p>
+      <div class="trap-compare-grid">
+        <div class="trap-err-box">
+          <div class="trap-err-title">❌ Erreur d'Examen</div>
+          Mettre l'âge dans la table de faits :
+          <code>fact_visites(age_patient)</code>
+        </div>
+        <div class="trap-fix-box">
+          <div class="trap-fix-title">✅ Règle d'Or</div>
+          Attribut textuel dans la dimension :
+          <code>dim_patient(tranche_age)</code>
+        </div>
+      </div>
     </div>
+
+    <!-- Piège 2 -->
     <div class="trap-item">
-      <h4>🚫 Piège 2 : Additionner des Moyennes</h4>
-      <p>Une moyenne est non-additive ! On stocke <code>SUM(frais)</code> et <code>COUNT(visites)</code> puis on calcule la moyenne pondérée.</p>
+      <div class="trap-top-bar">
+        <span class="trap-badge">Erreur Mathématique N°2</span>
+        <span style="font-size:1.2rem;">🚫</span>
+      </div>
+      <h4>Additionner des Moyennes ou des Ratios</h4>
+      <p>Une moyenne ou un pourcentage est non-additif ! La somme de moyennes est mathématiquement fausse.</p>
+      <div class="trap-compare-grid">
+        <div class="trap-err-box">
+          <div class="trap-err-title">❌ Erreur d'Examen</div>
+          Moyenne sur moyennes :
+          <code>AVG(duree_moyenne_mensuelle)</code>
+        </div>
+        <div class="trap-fix-box">
+          <div class="trap-fix-title">✅ Règle d'Or</div>
+          Stocker les composants additifs :
+          <code>SUM(duree) / COUNT(visite)</code>
+        </div>
+      </div>
     </div>
+
+    <!-- Piège 3 -->
     <div class="trap-item">
-      <h4>🚫 Piège 3 : Oublier la Clé Surrogate</h4>
-      <p>N'utilisez jamais le matricule de la sécurité sociale comme clé de jointure. Utilisez toujours un entier incrémental <code>patient_key</code>.</p>
+      <div class="trap-top-bar">
+        <span class="trap-badge">Erreur Architecture N°3</span>
+        <span style="font-size:1.2rem;">🚫</span>
+      </div>
+      <h4>Utiliser des Clés Naturelles / Métier</h4>
+      <p>Bannissez le numéro de Sécurité Sociale ou le CIN comme clé de jointure dans la table de faits.</p>
+      <div class="trap-compare-grid">
+        <div class="trap-err-box">
+          <div class="trap-err-title">❌ Erreur d'Examen</div>
+          Clé métier source instable :
+          <code>f.cin_patient = p.cin_patient</code>
+        </div>
+        <div class="trap-fix-box">
+          <div class="trap-fix-title">✅ Règle d'Or</div>
+          Clé de substitution (Surrogate Key) :
+          <code>patient_key INT IDENTITY</code>
+        </div>
+      </div>
     </div>
+
+    <!-- Piège 4 -->
     <div class="trap-item">
-      <h4>🚫 Piège 4 : Sur-normaliser en Flocon Inutilement</h4>
-      <p>Dans un entrepôt de données, la dénormalisation est une qualité qui accélère les requêtes en évitant les jointures en cascade.</p>
+      <div class="trap-top-bar">
+        <span class="trap-badge">Erreur Modélisation N°4</span>
+        <span style="font-size:1.2rem;">🚫</span>
+      </div>
+      <h4>Sur-normaliser en Flocon Inutilement</h4>
+      <p>En OLAP décisionnel, la dénormalisation est une vertu majeure qui évite les cascades de jointures lentes.</p>
+      <div class="trap-compare-grid">
+        <div class="trap-err-box">
+          <div class="trap-err-title">❌ Erreur d'Examen</div>
+          Éclatement en flocon 3NF :
+          <code>dim_patient → dim_ville → region</code>
+        </div>
+        <div class="trap-fix-box">
+          <div class="trap-fix-title">✅ Règle d'Or</div>
+          Dénormalisation en Étoile Kimball :
+          <code>dim_patient(ville, province, region)</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Piège 5 -->
+    <div class="trap-item highlight-span">
+      <div class="trap-top-bar">
+        <span class="trap-badge">Erreur Infrastructure N°5</span>
+        <span style="font-size:1.2rem;">💥</span>
+      </div>
+      <h4>Exécuter la BI directement sur la Base OLTP des Urgences</h4>
+      <p>Pourquoi ne pas brancher Power BI sur le serveur transactionnel de garde ? <strong>La contention et les verrous !</strong></p>
+      <div class="trap-compare-grid">
+        <div class="trap-err-box">
+          <div class="trap-err-title">❌ Risque Vital Clinique</div>
+          La requête analytique pose des verrous partagés massifs (<strong>S-Locks</strong>) sur des millions de lignes, sature l'I/O disque et le CPU.
+        </div>
+        <div class="trap-fix-box">
+          <div class="trap-fix-title">✅ Solution Décisionnelle Obligatoire</div>
+          Isoler physiquement l'entrepôt (EDW) alimenté par ETL asynchrone : zéro impact sur les écritures vitales des urgences (<strong>X-Locks</strong>).
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -2002,10 +3475,74 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeLightbox();
 });
 
-// 10. ACCORDION
+// 10. ACCORDION & MODULE 12 INTERACTIONS (COPY, TABS, SMOOTH EXPAND)
 function toggleAccordion(header) {
-  const body = header.nextElementSibling;
-  if (body) body.classList.toggle('active');
+  const card = header.closest('.qa-card');
+  if (card) {
+    card.classList.toggle('active');
+  } else {
+    const body = header.nextElementSibling;
+    if (body) body.classList.toggle('active');
+  }
+}
+
+function switchQaTab(btn, cardId, tabName) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  
+  const buttons = card.querySelectorAll('.qa-tab-btn');
+  buttons.forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  const panels = card.querySelectorAll('.qa-tab-content');
+  panels.forEach(p => {
+    if (p.getAttribute('data-tab') === tabName) {
+      p.classList.add('active');
+    } else {
+      p.classList.remove('active');
+    }
+  });
+}
+
+function copySqlCode(btn, rawSqlId) {
+  const el = document.getElementById(rawSqlId);
+  if (!el) return;
+  const sqlText = el.value || el.innerText;
+  const originalHtml = btn.innerHTML;
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(sqlText.trim()).then(() => {
+      btn.innerHTML = '<span style="color:#34d399;">✓</span> Copié !';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.classList.remove('copied');
+      }, 2200);
+    }).catch(() => fallbackCopy(btn, sqlText, originalHtml));
+  } else {
+    fallbackCopy(btn, sqlText, originalHtml);
+  }
+}
+
+function fallbackCopy(btn, text, originalHtml) {
+  const ta = document.createElement('textarea');
+  ta.value = text.trim();
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    btn.innerHTML = '<span style="color:#34d399;">✓</span> Copié !';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = originalHtml;
+      btn.classList.remove('copied');
+    }, 2200);
+  } catch (err) {
+    btn.innerHTML = 'Erreur';
+  }
+  document.body.removeChild(ta);
 }
 
 // 11. QUIZ INTERACTIF
